@@ -146,18 +146,89 @@ class Swaps extends EventEmitter {
     this.deals.delete(deal.r_hash);
   }
 
+  private getClientForCurrency(currency: string): LndClient {
+    switch (currency) {
+      case 'BTC':
+        return this.lndBtcClient;
+        break;
+      case 'LTC':
+        return this.lndLtcClient;
+        break;
+      default:
+        // TODO: Export export
+        throw new Error(`Unable to get client for currency ${currency}`);
+    }
+  }
+
   /**
    * Checks if a swap for two given orders can be executed.
    * @returns `true` if the swap can be executed, `false` otherwise
    */
-  private verifyExecution = (maker: StampedPeerOrder, taker: StampedOwnOrder): boolean => {
+  private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder) => {
+    console.log('VERIFYEXECTION');
     if (maker.pairId !== taker.pairId || !this.isPairSupported(maker.pairId)) {
-      return false;
+      // return false;
+      return Promise.reject();
+    }
+    console.log('verifyExecution.maker', maker);
+    console.log('verifyExecution.taker', taker);
+    const [baseCurrency, quoteCurrency] = maker.pairId.split('/');
+    const { baseCurrencyAmount, quoteCurrencyAmount } = Swaps.calculateSwapAmounts(taker.quantity, maker.price);
+    console.log('deal is:');
+    console.log(`${baseCurrency}:`, baseCurrencyAmount);
+    console.log(`${quoteCurrency}:`, quoteCurrencyAmount);
+
+    try {
+      const baseCurrencyClient = this.getClientForCurrency(baseCurrency);
+      const quoteCurrencyClient = this.getClientForCurrency(quoteCurrency);
+      // const { balance: baseCurrencyChannelBalance } = (await baseCurrencyClient.channelBalance()).toObject();
+      // const { balance: quoteCurrencyChannelBalanace } = (await quoteCurrencyClient.channelBalance()).toObject();
+      // console.log('baseClientDelta', baseCurrencyClient.cltvDelta);
+      // console.log('quoteClientDelta', quoteCurrencyClient.cltvDelta);
+      const baseCurrencyReq = new lndrpc.QueryRoutesRequest();
+      baseCurrencyReq.setAmt(baseCurrencyAmount);
+      baseCurrencyReq.setFinalCltvDelta(baseCurrencyClient.cltvDelta);
+      baseCurrencyReq.setNumRoutes(1);
+      const peer = this.pool.getPeer(maker.peerPubKey);
+      const baseCurrencyPubkey = peer.getLndPubKey(baseCurrency);
+      if (!baseCurrencyPubkey) {
+        throw new Error('baseCurrencyPubkey not found (temp error)');
+      }
+      baseCurrencyReq.setPubKey(baseCurrencyPubkey);
+      console.log('baseCurrencyPubkey', baseCurrencyPubkey);
+      const baseCurrencyQueryRoutesReq = await baseCurrencyClient.queryRoutes(baseCurrencyReq);
+      const baseCurrencyRoutes = baseCurrencyQueryRoutesReq.getRoutesList();
+      console.log('baseCurrency routes!!!!!', baseCurrencyRoutes);
+      if (baseCurrencyRoutes.length === 0) {
+        throw new Error('Can not swap. unable to find route to destination.');
+      }
+      const quoteCurrencyReq = new lndrpc.QueryRoutesRequest();
+      quoteCurrencyReq.setAmt(quoteCurrencyAmount);
+      quoteCurrencyReq.setFinalCltvDelta(quoteCurrencyClient.cltvDelta);
+      quoteCurrencyReq.setNumRoutes(1);
+      const quoteCurrencyPubkey = peer.getLndPubKey(quoteCurrency);
+      if (!quoteCurrencyPubkey) {
+        throw new Error('quoteCurrencyPubkey not found (temp error)');
+      }
+      quoteCurrencyReq.setPubKey(quoteCurrencyPubkey);
+      console.log('quoteCurrencyPubKey', quoteCurrencyPubkey);
+      const quoteCurrencyQueryRoutesReq = await baseCurrencyClient.queryRoutes(baseCurrencyReq);
+      const quoteCurrencyRoutes = quoteCurrencyQueryRoutesReq.getRoutesList();
+      console.log('quoteCurrency routes!!!!!', quoteCurrencyRoutes);
+      if (quoteCurrencyRoutes.length === 0) {
+        throw new Error('Can not swap. unable to find route to destination.');
+      }
+    } catch (e) {
+      console.log('catch e lollercopter', e);
+      // return false;
+      return Promise.reject();
     }
 
+    // TODO: <incoming/outgoing> channel balance not sufficient error
     // TODO: check route to peer. Maybe there is no route or no capacity to send the amount
 
-    return true;
+    // return true;
+    return Promise.resolve();
   }
 
   /**
@@ -168,38 +239,44 @@ class Swaps extends EventEmitter {
    */
   public executeSwap = (maker: StampedPeerOrder, taker: StampedOwnOrder): Promise<SwapResult> => {
     return new Promise((resolve, reject) => {
-      if (!this.verifyExecution(maker, taker)) {
-        reject();
-        return;
-      }
+      this.verifyExecution(maker, taker).then(() => {
+        const cleanup = () => {
+          this.removeListener('swap.paid', onPaid);
+          this.removeListener('swap.failed', onFailed);
+        };
 
-      const cleanup = () => {
-        this.removeListener('swap.paid', onPaid);
-        this.removeListener('swap.failed', onFailed);
-      };
+        const onPaid = (swapResult: SwapResult) => {
+          if (swapResult.r_hash === r_hash) {
+            cleanup();
+            resolve(swapResult);
+          }
+        };
 
-      const onPaid = (swapResult: SwapResult) => {
-        if (swapResult.r_hash === r_hash) {
-          cleanup();
-          resolve(swapResult);
-        }
-      };
+        const onFailed = (deal: SwapDeal) => {
+          if (deal.r_hash === r_hash) {
+            cleanup();
+            reject();
+          }
+        };
 
-      const onFailed = (deal: SwapDeal) => {
-        if (deal.r_hash === r_hash) {
-          cleanup();
+        const r_hash = this.beginSwap(maker, taker);
+        if (!r_hash) {
           reject();
+          return;
         }
-      };
 
-      const r_hash = this.beginSwap(maker, taker);
-      if (!r_hash) {
+        this.on('swap.paid', onPaid);
+        this.on('swap.failed', onFailed);
+      }, () => {
+        console.log('rejecting execution');
+        reject();
+      });
+      /*
+      if (!verifyResult) {
         reject();
         return;
       }
-
-      this.on('swap.paid', onPaid);
-      this.on('swap.failed', onFailed);
+      */
     });
   }
 
@@ -324,6 +401,7 @@ class Swaps extends EventEmitter {
       return false;
     }
 
+    // TODO: Extract to a function?
     let lndclient: LndClient;
     switch (deal.takerCurrency) {
       case 'BTC':
@@ -340,7 +418,9 @@ class Swaps extends EventEmitter {
 
     let height: number;
     try {
+      // TODO: Extract to function?
       const req = new lndrpc.QueryRoutesRequest();
+      console.log('requestBody.takerAmount', requestBody.takerAmount);
       req.setAmt(requestBody.takerAmount);
       req.setFinalCltvDelta(requestBody.takerCltvDelta);
       req.setNumRoutes(1);

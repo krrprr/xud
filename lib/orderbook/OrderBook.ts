@@ -256,6 +256,10 @@ class OrderBook extends EventEmitter {
     onUpdate?: (e: PlaceOrderEvent) => void,
     maxTime?: number,
   ): Promise<PlaceOrderResult> => {
+    // TODO: Check channel balance to verify that we can swap the order amount.
+    // Case channel not existent - error!
+    // Case channel exists, but not enough local balance -> warning!
+    // ----------------------------------------
     // this method can be called recursively on swap failures retries.
     // if max time exceeded, don't try to match
     if (maxTime && Date.now() > maxTime) {
