@@ -62,6 +62,7 @@ class DB {
       // TODO: make seed peers configurable
       const promises: Bluebird<any>[] = [];
       promises.push(Node.bulkCreate(<db.NodeAttributes[]>[
+        /*
         {
           nodePubKey: '02b66438730d1fcdf4a4ae5d3d73e847a272f160fee2938e132b52cab0a0d9cfc6',
           addresses: [{ host: 'xud1.test.exchangeunion.com', port: 8885 }],
@@ -74,6 +75,7 @@ class DB {
           nodePubKey: '03fd337659e99e628d0487e4f87acf93e353db06f754dccc402f2de1b857a319d0',
           addresses: [{ host: 'xud3.test.exchangeunion.com', port: 8885 }],
         },
+        */
       ]));
 
       promises.push(Currency.bulkCreate(<db.CurrencyAttributes[]>[

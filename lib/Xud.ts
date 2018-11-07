@@ -58,7 +58,8 @@ class Xud extends EventEmitter {
    * @param args optional arguments to override configuration parameters.
    */
   public start = async (args?: { [argName: string]: any }) => {
-    this.config.load(args);
+    const customArgs = args || JSON.parse(process.argv[2])[0];
+    this.config.load(customArgs);
     const loggers = Logger.createLoggers(this.config.loglevel, this.config.logpath, this.config.instanceid);
     this.logger = loggers.global;
     this.logger.info('config loaded');
