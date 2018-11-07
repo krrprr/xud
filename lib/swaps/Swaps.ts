@@ -56,7 +56,7 @@ class Swaps extends EventEmitter {
   }
 
   public init = async () => {
-    // Load Swaps from data base
+    // Load Swaps from database
     const result = await this.repository.getSwapDeals();
     result.forEach((deal: SwapDealInstance) => {
       this.usedHashes.add(deal.r_hash);
