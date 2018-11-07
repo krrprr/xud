@@ -259,6 +259,7 @@ class OrderBook extends EventEmitter {
     // TODO: Check channel balance to verify that we can swap the order amount.
     // Case channel not existent - error!
     // Case channel exists, but not enough local balance -> warning!
+    // Is showing just warnings worth it (additional gRPC channelbalance call).
     // ----------------------------------------
     // this method can be called recursively on swap failures retries.
     // if max time exceeded, don't try to match
