@@ -181,10 +181,6 @@ class Swaps extends EventEmitter {
     try {
       const baseCurrencyClient = this.getClientForCurrency(baseCurrency);
       const quoteCurrencyClient = this.getClientForCurrency(quoteCurrency);
-      // const { balance: baseCurrencyChannelBalance } = (await baseCurrencyClient.channelBalance()).toObject();
-      // const { balance: quoteCurrencyChannelBalanace } = (await quoteCurrencyClient.channelBalance()).toObject();
-      // console.log('baseClientDelta', baseCurrencyClient.cltvDelta);
-      // console.log('quoteClientDelta', quoteCurrencyClient.cltvDelta);
       const baseCurrencyReq = new lndrpc.QueryRoutesRequest();
       baseCurrencyReq.setAmt(baseCurrencyAmount);
       baseCurrencyReq.setFinalCltvDelta(baseCurrencyClient.cltvDelta);
@@ -401,19 +397,13 @@ class Swaps extends EventEmitter {
       return false;
     }
 
-    // TODO: Extract to a function?
     let lndclient: LndClient;
-    switch (deal.takerCurrency) {
-      case 'BTC':
-        lndclient = this.lndBtcClient;
-        break;
-      case 'LTC':
-        lndclient = this.lndLtcClient;
-        break;
-      default:
-        this.setDealState(deal, SwapState.Error, 'Can not swap. Unsupported taker currency.');
-        this.sendErrorToPeer(peer, deal.r_hash, deal.errorReason!, requestPacket.header.id);
-        return false;
+    try {
+      lndclient = this.getClientForCurrency(deal.takerCurrency);
+    } catch {
+      this.setDealState(deal, SwapState.Error, 'Can not swap. Unsupported taker currency.');
+      this.sendErrorToPeer(peer, deal.r_hash, deal.errorReason!, requestPacket.header.id);
+      return false;
     }
 
     let height: number;
