@@ -13,6 +13,7 @@ import assert from 'assert';
 import { Models } from '../db/DB';
 import { SwapDealInstance } from 'lib/types/db';
 import { SwapDeal } from './types';
+import errors from './errors';
 
 type OrderToAccept = {
   quantityToAccept: number;
@@ -155,8 +156,7 @@ class Swaps extends EventEmitter {
         return this.lndLtcClient;
         break;
       default:
-        // TODO: Export export
-        throw new Error(`Unable to get client for currency ${currency}`);
+        throw errors.CLIENT_NOT_FOUND(currency);
     }
   }
 
