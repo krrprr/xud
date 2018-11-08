@@ -160,7 +160,10 @@ class Swaps extends EventEmitter {
     }
   }
 
-  private checkRoutes =  async (currency: string, amount: number, peerPubKey: string) => {
+  private checkRoutes =  async (currency: string, amount: number, peerPubKey: string): Promise<lndrpc.Route[]> => {
+    const error = () => {
+      return Promise.reject(`Can not swap. unable to find route to ${peerPubKey} on ${currency} chain for amount of ${amount}.`);
+    };
     try {
       const client = this.getClientForCurrency(currency);
       const req = new lndrpc.QueryRoutesRequest();
@@ -170,15 +173,15 @@ class Swaps extends EventEmitter {
       const peer = this.pool.getPeer(peerPubKey);
       const pubKey = peer.getLndPubKey(currency);
       if (!pubKey) {
-        throw new Error(`${currency} client's pubKey not found for peer ${peerPubKey}`);
+        return Promise.reject(`${currency} client's pubKey not found for peer ${peerPubKey}`);
       }
       req.setPubKey(pubKey);
       const routes = (await client.queryRoutes(req)).getRoutesList();
-      if (routes.length === 0) {
-        throw new Error(`Can not swap. unable to find route to ${pubKey} for amount of ${amount}.`);
-      }
+      this.logger.debug(`got ${routes.length} routes to destination: ${routes}`);
+      if (routes.length === 0) return error();
+      return routes;
     } catch {
-      throw new Error('Can not swap. unable to find route to destination');
+      return error();
     }
   }
 
@@ -241,6 +244,7 @@ class Swaps extends EventEmitter {
         this.on('swap.failed', onFailed);
       };
       const invalidSwap = () => {
+        // TODO: Add reason
         console.log('rejecting execution');
         reject();
       };
@@ -380,21 +384,7 @@ class Swaps extends EventEmitter {
 
     let height: number;
     try {
-      // TODO: Extract to function?
-      const req = new lndrpc.QueryRoutesRequest();
-      console.log('requestBody.takerAmount', requestBody.takerAmount);
-      req.setAmt(requestBody.takerAmount);
-      req.setFinalCltvDelta(requestBody.takerCltvDelta);
-      req.setNumRoutes(1);
-      req.setPubKey(peer.getLndPubKey(requestBody.takerCurrency)!);
-      const routes = await lndclient.queryRoutes(req);
-      deal.makerToTakerRoutes = routes.getRoutesList();
-      this.logger.debug('got ' + deal.makerToTakerRoutes.length + ' routes to destination: ' + deal.makerToTakerRoutes);
-      if (deal.makerToTakerRoutes.length === 0) {
-        this.setDealState(deal, SwapState.Error, 'Can not swap. unable to find route to destination.');
-        this.sendErrorToPeer(peer, deal.r_hash, deal.errorReason!, requestPacket.header.id);
-        return false;
-      }
+      deal.makerToTakerRoutes = await this.checkRoutes(deal.takerCurrency, requestBody.takerAmount, deal.peerPubKey);
     } catch (err) {
       this.setDealState(deal, SwapState.Error, 'Can not swap. unable to find route to destination: ' + err.message);
       this.sendErrorToPeer(peer, deal.r_hash, deal.errorReason!, requestPacket.header.id);
