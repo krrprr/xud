@@ -13,7 +13,6 @@ import assert from 'assert';
 import { Models } from '../db/DB';
 import { SwapDealInstance } from 'lib/types/db';
 import { SwapDeal } from './types';
-import errors from './errors';
 
 type OrderToAccept = {
   quantityToAccept: number;
