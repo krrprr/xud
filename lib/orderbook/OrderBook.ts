@@ -270,8 +270,8 @@ class OrderBook extends EventEmitter {
       });
     }
     // TODO: Check channel balance to verify that we can swap the order amount.
-    // Case channel not existent - error!
-    // Case channel exists, but not enough local balance -> warning!
+    // Case channel not existent -> error!
+    // Case channel with sufficient capacity exists, but not enough local balance -> warning!
 
     // perform match. maker orders will be removed from the repository
     const tp = this.getTradingPair(order.pairId);
