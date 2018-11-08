@@ -186,11 +186,11 @@ class Swaps extends EventEmitter {
 
   /**
    * Checks if a swap for two given orders can be executed.
-   * @returns `true` if the swap can be executed, `false` otherwise
+   * @returns `void` if the swap can be executed, `string` reason otherwise
    */
   private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder): Promise<void | string> => {
     if (maker.pairId !== taker.pairId || !this.isPairSupported(maker.pairId)) {
-      return Promise.reject();
+      return Promise.reject('pairId does not match or pair is not supported');
     }
 
     try {
