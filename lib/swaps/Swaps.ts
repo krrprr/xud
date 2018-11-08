@@ -159,6 +159,10 @@ class Swaps extends EventEmitter {
     }
   }
 
+  /**
+   * Checks if route(s) exists given currency, amount and peerPubKey.
+   * @returns `lndrpc.Route[]` if route(s) exist, `string` reason otherwise
+   */
   private checkRoutes =  async (currency: string, amount: number, peerPubKey: string): Promise<lndrpc.Route[]> => {
     const error = () => {
       return Promise.reject(`unable to find route to ${peerPubKey} on ${currency} chain for amount of ${amount}.`);
