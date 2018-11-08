@@ -263,16 +263,10 @@ class Swaps extends EventEmitter {
 
         this.on('swap.paid', onPaid);
         this.on('swap.failed', onFailed);
-      }, () => {
-        console.log('rejecting execution');
+      }, (e) => {
+        console.log('rejecting execution', e);
         reject();
       });
-      /*
-      if (!verifyResult) {
-        reject();
-        return;
-      }
-      */
     });
   }
 
