@@ -162,7 +162,7 @@ class Swaps extends EventEmitter {
 
   private checkRoutes =  async (currency: string, amount: number, peerPubKey: string): Promise<lndrpc.Route[]> => {
     const error = () => {
-      return Promise.reject(`Can not swap. unable to find route to ${peerPubKey} on ${currency} chain for amount of ${amount}.`);
+      return Promise.reject(`unable to find route to ${peerPubKey} on ${currency} chain for amount of ${amount}.`);
     };
     try {
       const client = this.getClientForCurrency(currency);
@@ -189,7 +189,7 @@ class Swaps extends EventEmitter {
    * Checks if a swap for two given orders can be executed.
    * @returns `true` if the swap can be executed, `false` otherwise
    */
-  private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder) => {
+  private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder): Promise<void | string> => {
     if (maker.pairId !== taker.pairId || !this.isPairSupported(maker.pairId)) {
       return Promise.reject();
     }
@@ -243,9 +243,8 @@ class Swaps extends EventEmitter {
         this.on('swap.paid', onPaid);
         this.on('swap.failed', onFailed);
       };
-      const invalidSwap = () => {
-        // TODO: Add reason
-        console.log('rejecting execution');
+      const invalidSwap = (reason: string) => {
+        this.logger.error(`Swap verification failed. Reason: ${reason}`);
         reject();
       };
       this.verifyExecution(maker, taker).then(validSwap, invalidSwap);
