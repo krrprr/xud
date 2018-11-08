@@ -160,62 +160,44 @@ class Swaps extends EventEmitter {
     }
   }
 
+  private checkRoutes =  async (currency: string, amount: number, peerPubKey: string) => {
+    try {
+      const client = this.getClientForCurrency(currency);
+      const req = new lndrpc.QueryRoutesRequest();
+      req.setAmt(amount);
+      req.setFinalCltvDelta(client.cltvDelta);
+      req.setNumRoutes(1);
+      const peer = this.pool.getPeer(peerPubKey);
+      const pubKey = peer.getLndPubKey(currency);
+      if (!pubKey) {
+        throw new Error(`${currency} client's pubKey not found for peer ${peerPubKey}`);
+      }
+      req.setPubKey(pubKey);
+      const routes = (await client.queryRoutes(req)).getRoutesList();
+      if (routes.length === 0) {
+        throw new Error(`Can not swap. unable to find route to ${pubKey} for amount of ${amount}.`);
+      }
+    } catch {
+      throw new Error('Can not swap. unable to find route to destination');
+    }
+  }
+
   /**
    * Checks if a swap for two given orders can be executed.
    * @returns `true` if the swap can be executed, `false` otherwise
    */
   private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder) => {
-    console.log('VERIFYEXECTION');
     if (maker.pairId !== taker.pairId || !this.isPairSupported(maker.pairId)) {
       return Promise.reject();
     }
-    console.log('verifyExecution.maker', maker);
-    console.log('verifyExecution.taker', taker);
-    const [baseCurrency, quoteCurrency] = maker.pairId.split('/');
-    const { baseCurrencyAmount, quoteCurrencyAmount } = Swaps.calculateSwapAmounts(taker.quantity, maker.price);
-    console.log('deal is:');
-    console.log(`${baseCurrency}:`, baseCurrencyAmount);
-    console.log(`${quoteCurrency}:`, quoteCurrencyAmount);
 
     try {
-      const baseCurrencyClient = this.getClientForCurrency(baseCurrency);
-      const quoteCurrencyClient = this.getClientForCurrency(quoteCurrency);
-      const baseCurrencyReq = new lndrpc.QueryRoutesRequest();
-      baseCurrencyReq.setAmt(baseCurrencyAmount);
-      baseCurrencyReq.setFinalCltvDelta(baseCurrencyClient.cltvDelta);
-      baseCurrencyReq.setNumRoutes(1);
-      const peer = this.pool.getPeer(maker.peerPubKey);
-      const baseCurrencyPubkey = peer.getLndPubKey(baseCurrency);
-      if (!baseCurrencyPubkey) {
-        throw new Error('baseCurrencyPubkey not found (temp error)');
-      }
-      baseCurrencyReq.setPubKey(baseCurrencyPubkey);
-      console.log('baseCurrencyPubkey', baseCurrencyPubkey);
-      const baseCurrencyQueryRoutesReq = await baseCurrencyClient.queryRoutes(baseCurrencyReq);
-      const baseCurrencyRoutes = baseCurrencyQueryRoutesReq.getRoutesList();
-      console.log('baseCurrency routes!!!!!', baseCurrencyRoutes);
-      if (baseCurrencyRoutes.length === 0) {
-        throw new Error('Can not swap. unable to find route to destination.');
-      }
-      const quoteCurrencyReq = new lndrpc.QueryRoutesRequest();
-      quoteCurrencyReq.setAmt(quoteCurrencyAmount);
-      quoteCurrencyReq.setFinalCltvDelta(quoteCurrencyClient.cltvDelta);
-      quoteCurrencyReq.setNumRoutes(1);
-      const quoteCurrencyPubkey = peer.getLndPubKey(quoteCurrency);
-      if (!quoteCurrencyPubkey) {
-        throw new Error('quoteCurrencyPubkey not found (temp error)');
-      }
-      quoteCurrencyReq.setPubKey(quoteCurrencyPubkey);
-      console.log('quoteCurrencyPubKey', quoteCurrencyPubkey);
-      const quoteCurrencyQueryRoutesReq = await baseCurrencyClient.queryRoutes(baseCurrencyReq);
-      const quoteCurrencyRoutes = quoteCurrencyQueryRoutesReq.getRoutesList();
-      console.log('quoteCurrency routes!!!!!', quoteCurrencyRoutes);
-      if (quoteCurrencyRoutes.length === 0) {
-        throw new Error('Can not swap. unable to find route to destination.');
-      }
+      const [baseCurrency, quoteCurrency] = maker.pairId.split('/');
+      const { baseCurrencyAmount, quoteCurrencyAmount } = Swaps.calculateSwapAmounts(taker.quantity, maker.price);
+      await this.checkRoutes(baseCurrency, baseCurrencyAmount, maker.peerPubKey);
+      await this.checkRoutes(quoteCurrency, quoteCurrencyAmount, maker.peerPubKey);
     } catch (e) {
-      console.log('catch e lollercopter', e);
-      return Promise.reject();
+      return Promise.reject(e);
     }
 
     return Promise.resolve();
