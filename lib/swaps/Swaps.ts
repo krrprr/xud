@@ -156,7 +156,7 @@ class Swaps extends EventEmitter {
         return this.lndLtcClient;
         break;
       default:
-        throw errors.CLIENT_NOT_FOUND(currency);
+        throw new Error(`unable to get client for currency ${currency}`);
     }
   }
 
