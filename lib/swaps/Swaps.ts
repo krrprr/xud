@@ -167,7 +167,6 @@ class Swaps extends EventEmitter {
   private verifyExecution = async (maker: StampedPeerOrder, taker: StampedOwnOrder) => {
     console.log('VERIFYEXECTION');
     if (maker.pairId !== taker.pairId || !this.isPairSupported(maker.pairId)) {
-      // return false;
       return Promise.reject();
     }
     console.log('verifyExecution.maker', maker);
@@ -216,14 +215,9 @@ class Swaps extends EventEmitter {
       }
     } catch (e) {
       console.log('catch e lollercopter', e);
-      // return false;
       return Promise.reject();
     }
 
-    // TODO: <incoming/outgoing> channel balance not sufficient error
-    // TODO: check route to peer. Maybe there is no route or no capacity to send the amount
-
-    // return true;
     return Promise.resolve();
   }
 
@@ -235,7 +229,7 @@ class Swaps extends EventEmitter {
    */
   public executeSwap = (maker: StampedPeerOrder, taker: StampedOwnOrder): Promise<SwapResult> => {
     return new Promise((resolve, reject) => {
-      this.verifyExecution(maker, taker).then(() => {
+      const validSwap = () => {
         const cleanup = () => {
           this.removeListener('swap.paid', onPaid);
           this.removeListener('swap.failed', onFailed);
@@ -263,10 +257,12 @@ class Swaps extends EventEmitter {
 
         this.on('swap.paid', onPaid);
         this.on('swap.failed', onFailed);
-      }, (e) => {
-        console.log('rejecting execution', e);
+      };
+      const invalidSwap = () => {
+        console.log('rejecting execution');
         reject();
-      });
+      };
+      this.verifyExecution(maker, taker).then(validSwap, invalidSwap);
     });
   }
 

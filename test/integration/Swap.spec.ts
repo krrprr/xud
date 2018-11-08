@@ -4,7 +4,7 @@ describe('Swaps', () => {
 
   describe('acceptDeal', () => {
 
-    it('should error upon unsupported currency', async () => {
+    it.skip('should error upon unsupported currency', async () => {
       expect(true).to.equal(false);
     });
 
