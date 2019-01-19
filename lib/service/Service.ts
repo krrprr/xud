@@ -322,6 +322,18 @@ class Service extends EventEmitter {
   }
 
   /**
+   * Get the list of trades.
+   */
+  public listTrades = (args: {all: boolean}) => {
+    const { all } = args;
+    if (all) {
+      return this.orderBook.getTrades();
+    } else {
+      return this.orderBook.getTrades(15);
+    }
+  }
+
+  /**
    * Add an order to the order book.
    * If price is zero or unspecified a market order will get added.
    */

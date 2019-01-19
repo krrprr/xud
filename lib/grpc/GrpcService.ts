@@ -414,6 +414,29 @@ class GrpcService {
   }
 
   /**
+   * See [[Service.listTrades]]
+   */
+  public listTrades: grpc.handleUnaryCall<xudrpc.ListTradesRequest, xudrpc.ListTradesResponse> = async (call, callback) => {
+    try {
+      const listTrades = await this.service.listTrades(call.request.toObject());
+      const response = new xudrpc.ListTradesResponse();
+      const trades: xudrpc.Trade[] = [];
+      listTrades.forEach((trade) => {
+        const grpcTrade = new xudrpc.Trade();
+        grpcTrade.setQuantity(trade.quantity);
+        grpcTrade.setRhash(trade.rHash ? trade.rHash : '');
+        grpcTrade.setMakerorderid(trade.makerOrderId);
+        grpcTrade.setTakerorderid(trade.takerOrderId ? trade.takerOrderId : '');
+        trades.push(grpcTrade);
+      });
+      response.setTradesList(trades);
+      callback(null, response);
+    } catch (err) {
+      callback(this.getGrpcError(err), null);
+    }
+  }
+
+  /**
    * See [[Service.listPeers]]
    */
   public listPeers: grpc.handleUnaryCall<xudrpc.ListPeersRequest, xudrpc.ListPeersResponse> = (_, callback) => {

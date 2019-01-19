@@ -551,6 +551,48 @@ export namespace ListPeersResponse {
   }
 }
 
+export class ListTradesRequest extends jspb.Message {
+  getAll(): boolean;
+  setAll(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListTradesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListTradesRequest): ListTradesRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListTradesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListTradesRequest;
+  static deserializeBinaryFromReader(message: ListTradesRequest, reader: jspb.BinaryReader): ListTradesRequest;
+}
+
+export namespace ListTradesRequest {
+  export type AsObject = {
+    all: boolean,
+  }
+}
+
+export class ListTradesResponse extends jspb.Message {
+  clearTradesList(): void;
+  getTradesList(): Array<Trade>;
+  setTradesList(value: Array<Trade>): void;
+  addTrades(value?: Trade, index?: number): Trade;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListTradesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListTradesResponse): ListTradesResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ListTradesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListTradesResponse;
+  static deserializeBinaryFromReader(message: ListTradesResponse, reader: jspb.BinaryReader): ListTradesResponse;
+}
+
+export namespace ListTradesResponse {
+  export type AsObject = {
+    tradesList: Array<Trade.AsObject>,
+  }
+}
+
 export class LndChannels extends jspb.Message {
   getActive(): number;
   setActive(value: number): void;
@@ -693,6 +735,38 @@ export namespace Order {
     OWN_OR_PEER_NOT_SET = 0,
     PEER_PUB_KEY = 5,
     LOCAL_ID = 6,
+  }
+}
+
+export class Trade extends jspb.Message {
+  getMakerorderid(): string;
+  setMakerorderid(value: string): void;
+
+  getTakerorderid(): string;
+  setTakerorderid(value: string): void;
+
+  getRhash(): string;
+  setRhash(value: string): void;
+
+  getQuantity(): number;
+  setQuantity(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Trade.AsObject;
+  static toObject(includeInstance: boolean, msg: Trade): Trade.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Trade, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Trade;
+  static deserializeBinaryFromReader(message: Trade, reader: jspb.BinaryReader): Trade;
+}
+
+export namespace Trade {
+  export type AsObject = {
+    makerorderid: string,
+    takerorderid: string,
+    rhash: string,
+    quantity: number,
   }
 }
 

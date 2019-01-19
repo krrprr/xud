@@ -133,6 +133,19 @@ class OrderBook extends EventEmitter {
   }
 
   /**
+   * Get all trades or a limit number of trades.
+   */
+  public getTrades = async (limit?: number) => {
+    if (limit) {
+      const response = await this.repository.getTradesLimit(limit);
+      return response;
+    } else {
+      const response = await this.repository.getTrades();
+      return response;
+    }
+  }
+
+  /**
    * Get lists of buy and sell orders of peers.
    */
   public getPeersOrders = (pairId: string) => {

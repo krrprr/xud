@@ -210,6 +210,31 @@
         ]
       }
     },
+    "/v1/listtrades": {
+      "get": {
+        "operationId": "ListTrades",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xudrpcListTradesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "all",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
+        "tags": [
+          "Xud"
+        ]
+      }
+    },
     "/v1/nodeinfo": {
       "get": {
         "summary": "Gets general information about a node.",
@@ -765,6 +790,17 @@
         }
       }
     },
+    "xudrpcListTradesResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/xudrpcTrade"
+          }
+        }
+      }
+    },
     "xudrpcLndChannels": {
       "type": "object",
       "properties": {
@@ -1162,6 +1198,28 @@
         "currency_sent": {
           "type": "string",
           "description": "The ticker symbol of the currency sent."
+        }
+      }
+    },
+    "xudrpcTrade": {
+      "type": "object",
+      "properties": {
+        "makerOrderId": {
+          "type": "string",
+          "description": "* The order id of the maker order involved in this trade."
+        },
+        "takerOrderId": {
+          "type": "string",
+          "description": "The order id of the taker order involved in this trade, if applicable."
+        },
+        "rHash": {
+          "type": "string",
+          "description": "The rHash of the swap that filled this trade, if applicable."
+        },
+        "quantity": {
+          "type": "string",
+          "format": "int64",
+          "description": "The quantity transacted in this trade."
         }
       }
     },

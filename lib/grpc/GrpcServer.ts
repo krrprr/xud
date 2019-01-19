@@ -34,6 +34,7 @@ class GrpcServer {
       listCurrencies: grpcService.listCurrencies,
       listPairs: grpcService.listPairs,
       listPeers: grpcService.listPeers,
+      listTrades: grpcService.listTrades,
       placeOrder: grpcService.placeOrder,
       placeOrderSync: grpcService.placeOrderSync,
       removeCurrency: grpcService.removeCurrency,

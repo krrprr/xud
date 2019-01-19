@@ -30,6 +30,8 @@
     - [ListPairsResponse](#xudrpc.ListPairsResponse)
     - [ListPeersRequest](#xudrpc.ListPeersRequest)
     - [ListPeersResponse](#xudrpc.ListPeersResponse)
+    - [ListTradesRequest](#xudrpc.ListTradesRequest)
+    - [ListTradesResponse](#xudrpc.ListTradesResponse)
     - [LndChannels](#xudrpc.LndChannels)
     - [LndInfo](#xudrpc.LndInfo)
     - [Order](#xudrpc.Order)
@@ -53,6 +55,7 @@
     - [SubscribeRemovedOrdersRequest](#xudrpc.SubscribeRemovedOrdersRequest)
     - [SubscribeSwapsRequest](#xudrpc.SubscribeSwapsRequest)
     - [SwapResult](#xudrpc.SwapResult)
+    - [Trade](#xudrpc.Trade)
     - [UnbanRequest](#xudrpc.UnbanRequest)
     - [UnbanResponse](#xudrpc.UnbanResponse)
   
@@ -445,6 +448,36 @@
 
 
 
+<a name="xudrpc.ListTradesRequest"></a>
+
+### ListTradesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| all | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="xudrpc.ListTradesResponse"></a>
+
+### ListTradesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| trades | [Trade](#xudrpc.Trade) | repeated |  |
+
+
+
+
+
+
 <a name="xudrpc.LndChannels"></a>
 
 ### LndChannels
@@ -811,6 +844,24 @@
 
 
 
+<a name="xudrpc.Trade"></a>
+
+### Trade
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerOrderId | [string](#string) |  | The order id of the maker order involved in this trade. |
+| takerOrderId | [string](#string) |  | The order id of the taker order involved in this trade, if applicable. |
+| rHash | [string](#string) |  | The rHash of the swap that filled this trade, if applicable. |
+| quantity | [int64](#int64) |  | The quantity transacted in this trade. |
+
+
+
+
+
+
 <a name="xudrpc.UnbanRequest"></a>
 
 ### UnbanRequest
@@ -899,6 +950,7 @@
 | ListCurrencies | [ListCurrenciesRequest](#xudrpc.ListCurrenciesRequest) | [ListCurrenciesResponse](#xudrpc.ListCurrenciesResponse) | Gets a list of this node&#39;s supported currencies. |
 | ListPairs | [ListPairsRequest](#xudrpc.ListPairsRequest) | [ListPairsResponse](#xudrpc.ListPairsResponse) | Gets a list of this nodes suported trading pairs. |
 | ListPeers | [ListPeersRequest](#xudrpc.ListPeersRequest) | [ListPeersResponse](#xudrpc.ListPeersResponse) | Gets a list of connected peers. |
+| ListTrades | [ListTradesRequest](#xudrpc.ListTradesRequest) | [ListTradesResponse](#xudrpc.ListTradesResponse) |  |
 | PlaceOrder | [PlaceOrderRequest](#xudrpc.PlaceOrderRequest) | [PlaceOrderEvent](#xudrpc.PlaceOrderEvent) stream | Adds an order to the order book. If price is zero or unspecified a market order will get added. |
 | PlaceOrderSync | [PlaceOrderRequest](#xudrpc.PlaceOrderRequest) | [PlaceOrderResponse](#xudrpc.PlaceOrderResponse) | The synchronous non-streaming version of PlaceOrder. |
 | ExecuteSwap | [ExecuteSwapRequest](#xudrpc.ExecuteSwapRequest) | [SwapResult](#xudrpc.SwapResult) | Execute a swap on a maker peer order |

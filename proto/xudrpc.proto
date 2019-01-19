@@ -134,6 +134,12 @@ service Xud {
     };
   }
 
+  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
+    option (google.api.http) = {
+      get: "/v1/listtrades"
+    };
+  }
+
   /* Adds an order to the order book.
    * If price is zero or unspecified a market order will get added. */
   rpc PlaceOrder(PlaceOrderRequest) returns (stream PlaceOrderEvent) {
@@ -352,6 +358,14 @@ message ListPeersResponse {
   repeated Peer peers = 1 [json_name = "peers"];
 }
 
+message ListTradesRequest {
+  bool all = 1 [json_name = "all"];
+} 
+
+message ListTradesResponse {
+  repeated Trade trades = 1 [json_name = "trades"];
+}
+
 message LndChannels {
   // The number of active/online channels for this lnd instance that can be used for swaps.
   int32 active = 1 [json_name = "active"];
@@ -394,6 +408,17 @@ message Order {
   bool is_own_order = 9 [json_name = "is_own_order"];
   // The amount on hold pending swap exectuion.
   double hold = 10 [json_name = "hold"];
+}
+
+message Trade {
+  /** The order id of the maker order involved in this trade. */
+  string makerOrderId = 1 [json_name = "maker_order_id"];
+  // The order id of the taker order involved in this trade, if applicable.
+  string takerOrderId = 2 [json_name = "taker_order_id"];
+  // The rHash of the swap that filled this trade, if applicable.
+  string rHash = 3 [json_name = "r_hash"];
+  // The quantity transacted in this trade.
+  int64 quantity = 4 [json_name = "quantity"];
 }
 
 message OrderRemoval {
