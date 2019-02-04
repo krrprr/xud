@@ -56,6 +56,7 @@
     - [SubscribeSwapsRequest](#xudrpc.SubscribeSwapsRequest)
     - [SwapFailure](#xudrpc.SwapFailure)
     - [SwapSuccess](#xudrpc.SwapSuccess)
+    - [Trade](#xudrpc.Trade)
     - [UnbanRequest](#xudrpc.UnbanRequest)
     - [UnbanResponse](#xudrpc.UnbanResponse)
   
