@@ -1,4 +1,4 @@
-import { SwapRole, SwapPhase, SwapState, SwapFailureReason } from 'lib/types/enums';
+import { SwapRole, SwapPhase, SwapState, SwapFailureReason } from 'lib/constants/enums';
 import { Route } from '../proto/lndrpc_pb';
 
 export type SwapDeal = {
@@ -52,7 +52,7 @@ export type SwapDeal = {
   makerToTakerRoutes?: Route[];
   createTime: number;
   executeTime?: number;
-  completeTime?: number
+  completeTime?: number;
 };
 
 /** The result of a successful swap. */

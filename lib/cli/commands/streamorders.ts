@@ -29,12 +29,12 @@ const ensureConnection = (argv: Arguments, printError?: boolean) => {
       setTimeout(ensureConnection.bind(undefined, argv), 3000);
     } else {
       console.log('Successfully connected, subscribing for orders');
-      subscribeOrders(argv);
+      streamOrders(argv);
     }
   });
 };
 
-const subscribeOrders = (argv: Arguments) =>  {
+const streamOrders = (argv: Arguments) =>  {
   const addedOrdersRequest = new xudrpc.SubscribeAddedOrdersRequest();
   addedOrdersRequest.setExisting(argv.existing);
   const addedOrdersSubscription = loadXudClient(argv).subscribeAddedOrders(addedOrdersRequest);
@@ -58,8 +58,10 @@ const subscribeOrders = (argv: Arguments) =>  {
   // prevent exiting and do nothing, it's already caught above.
   removedOrdersSubscription.on('error', () => {});
 
-  const swapsSubscription = loadXudClient(argv).subscribeSwaps(new xudrpc.SubscribeSwapsRequest());
-  swapsSubscription.on('data', (swapResult: xudrpc.SwapResult) => {
+  const swapsRequest = new xudrpc.SubscribeSwapsRequest();
+  swapsRequest.setIncludeTaker(true);
+  const swapsSubscription = loadXudClient(argv).subscribeSwaps(swapsRequest);
+  swapsSubscription.on('data', (swapResult: xudrpc.SwapSuccess) => {
     console.log(`Order swapped: ${JSON.stringify(swapResult.toObject())}`);
   });
 
