@@ -104,7 +104,7 @@ describe('Database', () => {
   it('should add a swap and a trade for the order', async () => {
     await orderBookRepo.addOrderIfNotExists(order);
     const { rHash } = deal;
-    const trade: TradeFactory = { rHash, quantity: deal.quantity!, makerOrderId: order.id };
+    const trade: TradeFactory = { rHash, quantity: deal.quantity!, makerOrderId: order.id, localId: deal.localId, pairId: deal.pairId };
     await orderBookRepo.addTrade(trade);
     await swapRepo.addSwapDeal(deal);
 
@@ -146,7 +146,8 @@ describe('Database', () => {
     const maker = createOwnOrder(price, tradeQuantity, true);
     const taker = createOwnOrder(price, tradeQuantity, false);
     await Promise.all([orderBookRepo.addOrderIfNotExists(maker), orderBookRepo.addOrderIfNotExists(taker)]);
-    const trade: TradeFactory = { quantity: tradeQuantity, makerOrderId: maker.id, takerOrderId: taker.id };
+    const trade: TradeFactory = { quantity: tradeQuantity, makerOrderId: maker.id, takerOrderId: taker.id, localId: maker.localId,
+      pairId: maker.pairId };
     await orderBookRepo.addTrade(trade);
   });
 
