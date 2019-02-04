@@ -64,6 +64,8 @@ export type TradeFactory = {
   rHash?: string,
   /** The quantity transacted in this trade. */
   quantity: number,
+  localId: string,
+  pairId: string,
 };
 
 export type TradeAttributes = TradeFactory;

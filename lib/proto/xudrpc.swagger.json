@@ -210,31 +210,6 @@
         ]
       }
     },
-    "/v1/listtrades": {
-      "get": {
-        "operationId": "ListTrades",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/xudrpcListTradesResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "all",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
-          }
-        ],
-        "tags": [
-          "Xud"
-        ]
-      }
-    },
     "/v1/nodeinfo": {
       "get": {
         "summary": "Gets general information about a node.",
@@ -520,6 +495,31 @@
             }
           }
         },
+        "tags": [
+          "Xud"
+        ]
+      }
+    },
+    "/v1/trades": {
+      "get": {
+        "operationId": "ListTrades",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/xudrpcListTradesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
         "tags": [
           "Xud"
         ]
@@ -1204,22 +1204,30 @@
     "xudrpcTrade": {
       "type": "object",
       "properties": {
-        "makerOrderId": {
+        "maker_order_id": {
           "type": "string",
-          "description": "* The order id of the maker order involved in this trade."
+          "description": "The order id of the maker order involved in this trade."
         },
-        "takerOrderId": {
+        "taker_order_id": {
           "type": "string",
           "description": "The order id of the taker order involved in this trade, if applicable."
         },
-        "rHash": {
+        "r_hash": {
           "type": "string",
-          "description": "The rHash of the swap that filled this trade, if applicable."
+          "description": "The payment hash of the swap that filled this trade, if applicable."
         },
         "quantity": {
           "type": "string",
           "format": "int64",
           "description": "The quantity transacted in this trade."
+        },
+        "pair_id": {
+          "type": "string",
+          "title": "pair id of trade"
+        },
+        "local_id": {
+          "type": "string",
+          "title": "local id of trade"
         }
       }
     },

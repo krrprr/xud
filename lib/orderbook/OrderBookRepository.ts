@@ -52,12 +52,12 @@ class OrderbookRepository {
     return this.models.Trade.create(trade);
   }
 
-  public getTrades = (): Bluebird<db.TradeInstance[]> => {
-    return this.models.Trade.findAll();
-  }
-
-  public getTradesLimit = (limit: number): Bluebird<db.TradeInstance[]> => {
-    return this.models.Trade.findAll({ limit });
+  public getTradesLimit = (limit?: number): Bluebird<db.TradeInstance[]> => {
+    if (limit) {
+      return this.models.Trade.findAll({ limit, order: [['time', 'DESC']] });
+    } else {
+      return this.models.Trade.findAll({ order: [['time', 'DESC']] });
+    }
   }
 }
 

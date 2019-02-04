@@ -456,7 +456,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| all | [bool](#bool) |  |  |
+| limit | [int32](#int32) |  |  |
 
 
 
@@ -852,10 +852,12 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| makerOrderId | [string](#string) |  | The order id of the maker order involved in this trade. |
-| takerOrderId | [string](#string) |  | The order id of the taker order involved in this trade, if applicable. |
-| rHash | [string](#string) |  | The rHash of the swap that filled this trade, if applicable. |
+| maker_order_id | [string](#string) |  | The order id of the maker order involved in this trade. |
+| taker_order_id | [string](#string) |  | The order id of the taker order involved in this trade, if applicable. |
+| r_hash | [string](#string) |  | The payment hash of the swap that filled this trade, if applicable. |
 | quantity | [int64](#int64) |  | The quantity transacted in this trade. |
+| pair_id | [string](#string) |  | pair id of trade |
+| local_id | [string](#string) |  | local id of trade |
 
 
 

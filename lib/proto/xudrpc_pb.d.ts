@@ -552,8 +552,8 @@ export namespace ListPeersResponse {
 }
 
 export class ListTradesRequest extends jspb.Message {
-  getAll(): boolean;
-  setAll(value: boolean): void;
+  getLimit(): number;
+  setLimit(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListTradesRequest.AsObject;
@@ -567,7 +567,7 @@ export class ListTradesRequest extends jspb.Message {
 
 export namespace ListTradesRequest {
   export type AsObject = {
-    all: boolean,
+    limit: number,
   }
 }
 
@@ -739,17 +739,23 @@ export namespace Order {
 }
 
 export class Trade extends jspb.Message {
-  getMakerorderid(): string;
-  setMakerorderid(value: string): void;
+  getMakerOrderId(): string;
+  setMakerOrderId(value: string): void;
 
-  getTakerorderid(): string;
-  setTakerorderid(value: string): void;
+  getTakerOrderId(): string;
+  setTakerOrderId(value: string): void;
 
-  getRhash(): string;
-  setRhash(value: string): void;
+  getRHash(): string;
+  setRHash(value: string): void;
 
   getQuantity(): number;
   setQuantity(value: number): void;
+
+  getPairId(): string;
+  setPairId(value: string): void;
+
+  getLocalId(): string;
+  setLocalId(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Trade.AsObject;
@@ -763,10 +769,12 @@ export class Trade extends jspb.Message {
 
 export namespace Trade {
   export type AsObject = {
-    makerorderid: string,
-    takerorderid: string,
-    rhash: string,
+    makerOrderId: string,
+    takerOrderId: string,
+    rHash: string,
     quantity: number,
+    pairId: string,
+    localId: string,
   }
 }
 

@@ -136,7 +136,7 @@ service Xud {
 
   rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
     option (google.api.http) = {
-      get: "/v1/listtrades"
+      get: "/v1/trades"
     };
   }
 
@@ -359,7 +359,7 @@ message ListPeersResponse {
 }
 
 message ListTradesRequest {
-  bool all = 1 [json_name = "all"];
+  int32 limit = 1 [json_name = "limit"];
 } 
 
 message ListTradesResponse {
@@ -411,14 +411,18 @@ message Order {
 }
 
 message Trade {
-  /** The order id of the maker order involved in this trade. */
-  string makerOrderId = 1 [json_name = "maker_order_id"];
+  // The order id of the maker order involved in this trade.
+  string maker_order_id = 1 [json_name = "maker_order_id"];
   // The order id of the taker order involved in this trade, if applicable.
-  string takerOrderId = 2 [json_name = "taker_order_id"];
-  // The rHash of the swap that filled this trade, if applicable.
-  string rHash = 3 [json_name = "r_hash"];
+  string taker_order_id = 2 [json_name = "taker_order_id"];
+  // The payment hash of the swap that filled this trade, if applicable.
+  string r_hash = 3 [json_name = "r_hash"];
   // The quantity transacted in this trade.
   int64 quantity = 4 [json_name = "quantity"];
+  // pair id of trade
+  string pair_id = 5 [json_name = "pair_id"];
+  // local id of trade
+  string local_id = 6 [json_name = "local_id"];
 }
 
 message OrderRemoval {

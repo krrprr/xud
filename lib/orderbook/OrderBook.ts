@@ -103,7 +103,8 @@ class OrderBook extends EventEmitter {
           // we must remove the amount that was put on hold while the swap was pending for the remaining order
           this.removeOrderHold(orderId, pairId, quantity);
 
-          await this.persistTrade(swapResult.quantity, this.getOwnOrder(swapResult.orderId, swapResult.pairId), undefined, swapResult.rHash);
+          await this.persistTrade(swapResult.quantity, swapResult.localId, swapResult.pairId,
+          this.getOwnOrder(swapResult.orderId, swapResult.pairId), undefined, swapResult.rHash);
           this.removeOwnOrder(orderId, pairId, quantity, peerPubKey);
           this.emit('ownOrder.swapped', { pairId, quantity, id: orderId });
         }
@@ -133,16 +134,11 @@ class OrderBook extends EventEmitter {
   }
 
   /**
-   * Get all trades or a limit number of trades.
+   * Get all trades or a limited number of trades.
    */
   public getTrades = async (limit?: number) => {
-    if (limit) {
-      const response = await this.repository.getTradesLimit(limit);
-      return response;
-    } else {
-      const response = await this.repository.getTrades();
-      return response;
-    }
+    const response = await this.repository.getTradesLimit(limit);
+    return response;
   }
 
   /**
@@ -322,7 +318,7 @@ class OrderBook extends EventEmitter {
         portion.localId = maker.localId;
         result.internalMatches.push(maker);
         this.emit('ownOrder.filled', portion);
-        await this.persistTrade(portion.quantity, maker, taker);
+        await this.persistTrade(portion.quantity, portion.localId, portion.pairId, maker, taker);
         onUpdate && onUpdate({ case: PlaceOrderEventCase.InternalMatch, payload: maker });
       } else {
         if (!this.swaps) {
@@ -389,7 +385,7 @@ class OrderBook extends EventEmitter {
     try {
       const swapResult = await this.swaps!.executeSwap(maker, taker);
       this.emit('peerOrder.filled', maker);
-      await this.persistTrade(swapResult.quantity, maker, taker, swapResult.rHash);
+      await this.persistTrade(swapResult.quantity, swapResult.localId, swapResult.pairId, maker, taker, swapResult.rHash);
       return swapResult;
     } catch (err) {
       this.emit('peerOrder.invalidation', maker);
@@ -415,13 +411,15 @@ class OrderBook extends EventEmitter {
     return true;
   }
 
-  private persistTrade = async (quantity: number, makerOrder: Order, takerOrder?: OwnOrder, rHash?: string) => {
+  private persistTrade = async (quantity: number, localId: string, pairId: string, makerOrder: Order, takerOrder?: OwnOrder, rHash?: string) => {
     const addOrderPromises = [this.repository.addOrderIfNotExists(makerOrder)];
     if (takerOrder) {
       addOrderPromises.push(this.repository.addOrderIfNotExists(takerOrder));
     }
     await Promise.all(addOrderPromises);
     await this.repository.addTrade({
+      localId,
+      pairId,
       quantity,
       rHash,
       makerOrderId: makerOrder.id,

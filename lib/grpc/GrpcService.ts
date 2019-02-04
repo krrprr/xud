@@ -12,6 +12,7 @@ import { errorCodes as lndErrorCodes } from '../lndclient/errors';
 import { LndInfo } from '../lndclient/LndClient';
 import { PlaceOrderResult, PlaceOrderEvent, PlaceOrderEventCase } from '../types/orderBook';
 import { SwapResult } from 'lib/swaps/types';
+import { TradeInstance } from '../types/db';
 
 /**
  * Creates an xudrpc Order message from a [[StampedOrder]].
@@ -421,12 +422,14 @@ class GrpcService {
       const listTrades = await this.service.listTrades(call.request.toObject());
       const response = new xudrpc.ListTradesResponse();
       const trades: xudrpc.Trade[] = [];
-      listTrades.forEach((trade) => {
+      listTrades.forEach((trade: TradeInstance) => {
         const grpcTrade = new xudrpc.Trade();
         grpcTrade.setQuantity(trade.quantity);
-        grpcTrade.setRhash(trade.rHash ? trade.rHash : '');
-        grpcTrade.setMakerorderid(trade.makerOrderId);
-        grpcTrade.setTakerorderid(trade.takerOrderId ? trade.takerOrderId : '');
+        grpcTrade.setRHash(trade.rHash ? trade.rHash : '');
+        grpcTrade.setMakerOrderId(trade.makerOrderId);
+        grpcTrade.setTakerOrderId(trade.takerOrderId ? trade.takerOrderId : '');
+        grpcTrade.setLocalId(trade.localId);
+        grpcTrade.setPairId(trade.pairId);
         trades.push(grpcTrade);
       });
       response.setTradesList(trades);

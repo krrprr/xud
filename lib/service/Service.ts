@@ -324,12 +324,12 @@ class Service extends EventEmitter {
   /**
    * Get the list of trades.
    */
-  public listTrades = (args: {all: boolean}) => {
-    const { all } = args;
-    if (all) {
+  public listTrades = (args: {limit: number}) => {
+    const { limit } = args;
+    if (limit === 0) {
       return this.orderBook.getTrades();
     } else {
-      return this.orderBook.getTrades(15);
+      return this.orderBook.getTrades(limit);
     }
   }
 

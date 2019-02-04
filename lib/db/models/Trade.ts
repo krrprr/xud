@@ -6,6 +6,8 @@ export default (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) 
     makerOrderId: { type: DataTypes.STRING, allowNull: false },
     takerOrderId: { type: DataTypes.STRING, allowNull: true },
     rHash: { type: DataTypes.STRING, allowNull: true },
+    localId: { type: DataTypes.STRING, allowNull: false },
+    pairId: { type: DataTypes.STRING, allowNull: false },
     quantity: { type: DataTypes.DECIMAL(8), allowNull: false },
   };
 
@@ -18,6 +20,14 @@ export default (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) 
   const Trade = sequelize.define<db.TradeInstance, db.TradeAttributes>('Trade', attributes, options);
 
   Trade.associate = (models: Sequelize.Models) => {
+    models.Trade.belongsTo(models.Order, {
+      foreignKey: 'pairId',
+      constraints: false,
+    });
+    models.Trade.belongsTo(models.Order, {
+      foreignKey: 'localId',
+      constraints: false,
+    });
     models.Trade.belongsTo(models.Order, {
       as: 'makerOrder',
       foreignKey: 'makerOrderId',
