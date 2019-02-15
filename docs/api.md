@@ -457,7 +457,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| limit | [int32](#int32) |  |  |
+| limit | [int32](#int32) |  | The maximum number of trades to return |
 
 
 
@@ -885,7 +885,6 @@
 | r_hash | [string](#string) |  | The payment hash of the swap that filled this trade, if applicable. |
 | quantity | [int64](#int64) |  | The quantity transacted in this trade. |
 | pair_id | [string](#string) |  | pair id of trade |
-| local_id | [string](#string) |  | local id of trade |
 
 
 

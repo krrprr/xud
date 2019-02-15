@@ -778,9 +778,6 @@ export class Trade extends jspb.Message {
   getPairId(): string;
   setPairId(value: string): void;
 
-  getLocalId(): string;
-  setLocalId(value: string): void;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Trade.AsObject;
   static toObject(includeInstance: boolean, msg: Trade): Trade.AsObject;
@@ -798,7 +795,6 @@ export namespace Trade {
     rHash: string,
     quantity: number,
     pairId: string,
-    localId: string,
   }
 }
 

@@ -551,6 +551,7 @@
         "parameters": [
           {
             "name": "limit",
+            "description": "The maximum number of trades to return.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -1337,10 +1338,6 @@
         "pair_id": {
           "type": "string",
           "title": "pair id of trade"
-        },
-        "local_id": {
-          "type": "string",
-          "title": "local id of trade"
         }
       }
     },
