@@ -373,6 +373,7 @@ message ListPeersResponse {
 }
 
 message ListTradesRequest {
+  // The maximum number of trades to return
   int32 limit = 1 [json_name = "limit"];
 } 
 
@@ -435,8 +436,6 @@ message Trade {
   int64 quantity = 4 [json_name = "quantity"];
   // pair id of trade
   string pair_id = 5 [json_name = "pair_id"];
-  // local id of trade
-  string local_id = 6 [json_name = "local_id"];
 }
 
 message OrderRemoval {

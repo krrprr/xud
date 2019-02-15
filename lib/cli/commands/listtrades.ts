@@ -8,7 +8,7 @@ export const describe = 'list completed trades';
 
 export const builder = {
   limit: {
-    description: 'whether to return all trades',
+    description: 'the maximum number of trades to display',
     type: 'number',
     default: 15,
   },
