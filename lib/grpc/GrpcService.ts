@@ -45,6 +45,8 @@ const createSwapSuccess = (result: SwapSuccess) => {
   swapSuccess.setPairId(result.pairId);
   swapSuccess.setQuantity(result.quantity);
   swapSuccess.setRHash(result.rHash);
+  swapSuccess.setPrice(result.price);
+  swapSuccess.setRPreimage(result.rPreimage ? result.rPreimage : '');
   swapSuccess.setAmountReceived(result.amountReceived);
   swapSuccess.setAmountSent(result.amountSent);
   swapSuccess.setCurrencyReceived(result.currencyReceived);
@@ -127,6 +129,7 @@ class GrpcService {
       case serviceErrorCodes.INVALID_ARGUMENT:
       case p2pErrorCodes.ATTEMPTED_CONNECTION_TO_SELF:
       case p2pErrorCodes.UNEXPECTED_NODE_PUB_KEY:
+      case orderErrorCodes.QUANTITY_DOES_NOT_MATCH:
         code = status.INVALID_ARGUMENT;
         break;
       case orderErrorCodes.PAIR_DOES_NOT_EXIST:

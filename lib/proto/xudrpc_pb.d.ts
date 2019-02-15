@@ -1131,6 +1131,9 @@ export class RemoveOrderRequest extends jspb.Message {
   getOrderId(): string;
   setOrderId(value: string): void;
 
+  getQuantity(): number;
+  setQuantity(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveOrderRequest.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveOrderRequest): RemoveOrderRequest.AsObject;
@@ -1144,6 +1147,7 @@ export class RemoveOrderRequest extends jspb.Message {
 export namespace RemoveOrderRequest {
   export type AsObject = {
     orderId: string,
+    quantity: number,
   }
 }
 
@@ -1325,6 +1329,12 @@ export class SwapSuccess extends jspb.Message {
   getCurrencySent(): string;
   setCurrencySent(value: string): void;
 
+  getRPreimage(): string;
+  setRPreimage(value: string): void;
+
+  getPrice(): number;
+  setPrice(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SwapSuccess.AsObject;
   static toObject(includeInstance: boolean, msg: SwapSuccess): SwapSuccess.AsObject;
@@ -1348,6 +1358,8 @@ export namespace SwapSuccess {
     role: SwapSuccess.Role,
     currencyReceived: string,
     currencySent: string,
+    rPreimage: string,
+    price: number,
   }
 
   export enum Role {
