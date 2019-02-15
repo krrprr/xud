@@ -440,14 +440,15 @@ class GrpcService {
       const listTrades = await this.service.listTrades(call.request.toObject());
       const response = new xudrpc.ListTradesResponse();
       const trades: xudrpc.Trade[] = [];
-      listTrades.forEach((trade: TradeInstance) => {
+      listTrades.forEach(async (trade: TradeInstance) => {
         const grpcTrade = new xudrpc.Trade();
+        const deal = await trade.getSwapDeal();
         grpcTrade.setQuantity(trade.quantity);
         grpcTrade.setRHash(trade.rHash ? trade.rHash : '');
         grpcTrade.setMakerOrderId(trade.makerOrderId);
         grpcTrade.setTakerOrderId(trade.takerOrderId ? trade.takerOrderId : '');
-        grpcTrade.setLocalId(trade.localId);
-        grpcTrade.setPairId(trade.pairId);
+        grpcTrade.setLocalId(deal ? deal.Order!.localId! : '');
+        grpcTrade.setPairId(deal ? deal.Order!.pairId : '');
         trades.push(grpcTrade);
       });
       response.setTradesList(trades);
