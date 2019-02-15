@@ -447,7 +447,6 @@ class GrpcService {
         grpcTrade.setRHash(trade.rHash ? trade.rHash : '');
         grpcTrade.setMakerOrderId(trade.makerOrderId);
         grpcTrade.setTakerOrderId(trade.takerOrderId ? trade.takerOrderId : '');
-        grpcTrade.setLocalId(deal ? deal.Order!.localId! : '');
         grpcTrade.setPairId(deal ? deal.Order!.pairId : '');
         trades.push(grpcTrade);
       });
