@@ -102,7 +102,7 @@ class OrderBook extends EventEmitter {
           // we must remove the amount that was put on hold while the swap was pending for the remaining order
           this.removeOrderHold(orderId, pairId, quantity);
 
-          await this.persistTrade(swapSuccess.quantity, swapSuccess.localId, swapSuccess.pairId,
+          await this.persistTrade(swapSuccess.quantity,
           this.getOwnOrder(swapSuccess.orderId, swapSuccess.pairId), undefined, swapSuccess.rHash);
           this.removeOwnOrder(orderId, pairId, quantity, peerPubKey);
           this.emit('ownOrder.swapped', { pairId, quantity, id: orderId });
@@ -350,7 +350,7 @@ class OrderBook extends EventEmitter {
         portion.localId = maker.localId;
         internalMatches.push(maker);
         this.emit('ownOrder.filled', portion);
-        await this.persistTrade(portion.quantity, portion.localId, portion.pairId, maker, taker);
+        await this.persistTrade(portion.quantity, maker, taker);
         onUpdate && onUpdate({ type: PlaceOrderEventType.InternalMatch, payload: maker });
       } else {
         // this is a match with a peer order which cannot be considered executed until after a
@@ -418,7 +418,7 @@ class OrderBook extends EventEmitter {
     try {
       const swapSuccess = await this.swaps!.executeSwap(maker, taker);
       this.emit('peerOrder.filled', maker);
-      await this.persistTrade(swapSuccess.quantity, swapSuccess.localId, swapSuccess.pairId, maker, taker, swapSuccess.rHash);
+      await this.persistTrade(swapSuccess.quantity, maker, taker, swapSuccess.rHash);
       return swapSuccess;
     } catch (err) {
       this.emit('peerOrder.invalidation', maker);
@@ -444,15 +444,13 @@ class OrderBook extends EventEmitter {
     return true;
   }
 
-  private persistTrade = async (quantity: number, localId: string, pairId: string, makerOrder: Order, takerOrder?: OwnOrder, rHash?: string) => {
+  private persistTrade = async (quantity: number, makerOrder: Order, takerOrder?: OwnOrder, rHash?: string) => {
     const addOrderPromises = [this.repository.addOrderIfNotExists(makerOrder)];
     if (takerOrder) {
       addOrderPromises.push(this.repository.addOrderIfNotExists(takerOrder));
     }
     await Promise.all(addOrderPromises);
     await this.repository.addTrade({
-      localId,
-      pairId,
       quantity,
       rHash,
       makerOrderId: makerOrder.id,
