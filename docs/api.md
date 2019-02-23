@@ -880,7 +880,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maker_order_id | [string](#string) |  | The order id of the maker order involved in this trade. |
+| maker_order | [Order](#xudrpc.Order) |  | The order id of the maker order involved in this trade. |
 | taker_order_id | [string](#string) |  | The order id of the taker order involved in this trade, if applicable. |
 | r_hash | [string](#string) |  | The payment hash of the swap that filled this trade, if applicable. |
 | quantity | [int64](#int64) |  | The quantity transacted in this trade. |

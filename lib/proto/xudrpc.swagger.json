@@ -1318,8 +1318,8 @@
     "xudrpcTrade": {
       "type": "object",
       "properties": {
-        "maker_order_id": {
-          "type": "string",
+        "maker_order": {
+          "$ref": "#/definitions/xudrpcOrder",
           "description": "The order id of the maker order involved in this trade."
         },
         "taker_order_id": {

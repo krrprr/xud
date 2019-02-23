@@ -763,8 +763,10 @@ export namespace Order {
 }
 
 export class Trade extends jspb.Message {
-  getMakerOrderId(): string;
-  setMakerOrderId(value: string): void;
+  hasMakerOrder(): boolean;
+  clearMakerOrder(): void;
+  getMakerOrder(): Order | undefined;
+  setMakerOrder(value?: Order): void;
 
   getTakerOrderId(): string;
   setTakerOrderId(value: string): void;
@@ -790,7 +792,7 @@ export class Trade extends jspb.Message {
 
 export namespace Trade {
   export type AsObject = {
-    makerOrderId: string,
+    makerOrder?: Order.AsObject,
     takerOrderId: string,
     rHash: string,
     quantity: number,
