@@ -11,7 +11,7 @@ import { errorCodes as p2pErrorCodes } from '../p2p/errors';
 import { errorCodes as lndErrorCodes } from '../lndclient/errors';
 import { LndInfo } from '../lndclient/LndClient';
 import { SwapSuccess } from '../swaps/types';
-import { TradeInstance } from '../db/types';
+import { TradeInstance, OrderInstance } from '../db/types';
 
 /**
  * Creates an xudrpc Order message from an [[Order]].
@@ -66,6 +66,26 @@ const createSwapFailure = (order: PeerOrder) => {
   swapFailure.setPeerPubKey(order.peerPubKey);
   swapFailure.setQuantity(order.quantity);
   return swapFailure;
+};
+
+/**
+ * Creates an xudrpc Order from OrderInstance.
+ */
+const getGrpcOrderFromOrderInstance = (order: OrderInstance) => {
+  const grpcOrder = new xudrpc.Order();
+  grpcOrder.setCreatedAt(order.createdAt);
+  grpcOrder.setId(order.id);
+  grpcOrder.setIsOwnOrder(order.nodeId === undefined);
+  if (order.localId) {
+    grpcOrder.setLocalId(order.localId);
+  }
+  grpcOrder.setPairId(order.pairId);
+  // TODO: set peer pub key if order.nodeId has a value
+  if (order.price) {
+    grpcOrder.setPrice(order.price);
+  }
+  grpcOrder.setSide(order.isBuy ? xudrpc.OrderSide.BUY : xudrpc.OrderSide.SELL);
+  return grpcOrder;
 };
 
 /**
@@ -440,21 +460,21 @@ class GrpcService {
    */
   public listTrades: grpc.handleUnaryCall<xudrpc.ListTradesRequest, xudrpc.ListTradesResponse> = async (call, callback) => {
     try {
-      const listTrades = await this.service.listTrades(call.request.toObject());
+      const trades = await this.service.listTrades(call.request.toObject());
       const response = new xudrpc.ListTradesResponse();
-      const trades: xudrpc.Trade[] = [];
-      listTrades.forEach(async (trade: TradeInstance) => {
+      const tradesList: xudrpc.Trade[] = [];
+      trades.forEach(async (trade: TradeInstance) => {
         const grpcTrade = new xudrpc.Trade();
-        const order = grpcTrade.getMakerOrder();
-        const deal = await trade.getSwapDeal();
+        const makerOrder = await trade.getMakerOrder();
+        const takerOrder = await trade.getTakerOrder();
         grpcTrade.setQuantity(trade.quantity);
         grpcTrade.setRHash(trade.rHash ? trade.rHash : '');
-        grpcTrade.setMakerOrder(order);
-        grpcTrade.setTakerOrderId(trade.takerOrderId ? trade.takerOrderId : '');
-        grpcTrade.setPairId(deal ? deal.Order!.pairId : '');
-        trades.push(grpcTrade);
+        grpcTrade.setMakerOrder(getGrpcOrderFromOrderInstance(makerOrder!));
+        grpcTrade.setTakerOrder(getGrpcOrderFromOrderInstance(takerOrder!));
+        grpcTrade.setPairId(makerOrder!.pairId);
+        tradesList.push(grpcTrade);
       });
-      response.setTradesList(trades);
+      response.setTradesList(tradesList);
       callback(null, response);
     } catch (err) {
       callback(this.getGrpcError(err), null);

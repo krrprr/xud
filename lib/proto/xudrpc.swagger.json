@@ -312,7 +312,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/definitions/xudrpcPlaceOrderEvent"
+              "$ref": "#/x-stream-definitions/xudrpcPlaceOrderEvent"
             }
           }
         },
@@ -474,7 +474,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/definitions/xudrpcOrder"
+              "$ref": "#/x-stream-definitions/xudrpcOrder"
             }
           }
         },
@@ -501,7 +501,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/definitions/xudrpcOrderRemoval"
+              "$ref": "#/x-stream-definitions/xudrpcOrderRemoval"
             }
           }
         },
@@ -518,7 +518,7 @@
           "200": {
             "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/definitions/xudrpcSwapSuccess"
+              "$ref": "#/x-stream-definitions/xudrpcSwapSuccess"
             }
           }
         },
@@ -607,6 +607,43 @@
         "MAKER"
       ],
       "default": "TAKER"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
     },
     "xudrpcAddCurrencyRequest": {
       "type": "object",
@@ -1290,15 +1327,15 @@
       "properties": {
         "maker_order": {
           "$ref": "#/definitions/xudrpcOrder",
-          "description": "The order id of the maker order involved in this trade."
+          "description": "The maker order involved in this trade."
         },
-        "taker_order_id": {
-          "type": "string",
-          "description": "The order id of the taker order involved in this trade, if applicable."
+        "taker_order": {
+          "$ref": "#/definitions/xudrpcOrder",
+          "description": "The taker order involved in this trade."
         },
         "r_hash": {
           "type": "string",
-          "description": "The payment hash of the swap that filled this trade, if applicable."
+          "description": "The payment hash involved in this trade."
         },
         "quantity": {
           "type": "string",
@@ -1307,7 +1344,7 @@
         },
         "pair_id": {
           "type": "string",
-          "title": "pair id of trade"
+          "description": "The trading pair for this trade."
         }
       }
     },
@@ -1327,6 +1364,56 @@
     },
     "xudrpcUnbanResponse": {
       "type": "object"
+    }
+  },
+  "x-stream-definitions": {
+    "xudrpcOrder": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/xudrpcOrder"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of xudrpcOrder"
+    },
+    "xudrpcOrderRemoval": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/xudrpcOrderRemoval"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of xudrpcOrderRemoval"
+    },
+    "xudrpcPlaceOrderEvent": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/xudrpcPlaceOrderEvent"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of xudrpcPlaceOrderEvent"
+    },
+    "xudrpcSwapSuccess": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/xudrpcSwapSuccess"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of xudrpcSwapSuccess"
     }
   }
 }

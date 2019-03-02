@@ -881,11 +881,11 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| maker_order | [Order](#xudrpc.Order) |  | The order id of the maker order involved in this trade. |
-| taker_order_id | [string](#string) |  | The order id of the taker order involved in this trade, if applicable. |
-| r_hash | [string](#string) |  | The payment hash of the swap that filled this trade, if applicable. |
+| maker_order | [Order](#xudrpc.Order) |  | The maker order involved in this trade. |
+| taker_order | [Order](#xudrpc.Order) |  | The taker order involved in this trade. |
+| r_hash | [string](#string) |  | The payment hash involved in this trade. |
 | quantity | [int64](#int64) |  | The quantity transacted in this trade. |
-| pair_id | [string](#string) |  | pair id of trade |
+| pair_id | [string](#string) |  | The trading pair for this trade. |
 
 
 

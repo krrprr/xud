@@ -768,8 +768,10 @@ export class Trade extends jspb.Message {
   getMakerOrder(): Order | undefined;
   setMakerOrder(value?: Order): void;
 
-  getTakerOrderId(): string;
-  setTakerOrderId(value: string): void;
+  hasTakerOrder(): boolean;
+  clearTakerOrder(): void;
+  getTakerOrder(): Order | undefined;
+  setTakerOrder(value?: Order): void;
 
   getRHash(): string;
   setRHash(value: string): void;
@@ -793,7 +795,7 @@ export class Trade extends jspb.Message {
 export namespace Trade {
   export type AsObject = {
     makerOrder?: Order.AsObject,
-    takerOrderId: string,
+    takerOrder?: Order.AsObject,
     rHash: string,
     quantity: number,
     pairId: string,

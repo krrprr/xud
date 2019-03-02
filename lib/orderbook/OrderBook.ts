@@ -102,8 +102,7 @@ class OrderBook extends EventEmitter {
           // we must remove the amount that was put on hold while the swap was pending for the remaining order
           this.removeOrderHold(orderId, pairId, quantity);
 
-          await this.persistTrade(swapSuccess.quantity,
-          this.getOwnOrder(swapSuccess.orderId, swapSuccess.pairId), undefined, swapSuccess.rHash);
+          await this.persistTrade(swapSuccess.quantity, this.getOwnOrder(swapSuccess.orderId, swapSuccess.pairId), undefined, swapSuccess.rHash);
           this.removeOwnOrder(orderId, pairId, quantity, peerPubKey);
           this.emit('ownOrder.swapped', { pairId, quantity, id: orderId });
         }
@@ -133,10 +132,10 @@ class OrderBook extends EventEmitter {
   }
 
   /**
-   * Get all trades or a limited number of trades.
+   * Get all trades or a limited number of trades from the database.
    */
   public getTrades = async (limit?: number) => {
-    const response = await this.repository.getTradesLimit(limit);
+    const response = await this.repository.getTrades(limit);
     return response;
   }
 
