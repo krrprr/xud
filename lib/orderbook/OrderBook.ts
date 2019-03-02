@@ -256,6 +256,7 @@ class OrderBook extends EventEmitter {
       return {
         internalMatches: [],
         swapSuccesses: [],
+        swapFailures: [],
         remainingOrder: stampedOrder,
       };
     }
@@ -301,6 +302,7 @@ class OrderBook extends EventEmitter {
       return {
         internalMatches: [],
         swapSuccesses: [],
+        swapFailures: [],
         remainingOrder: order,
       };
     }
@@ -315,6 +317,8 @@ class OrderBook extends EventEmitter {
     const internalMatches: OwnOrder[] = [];
     /** Successful swaps performed for the placed order. */
     const swapSuccesses: SwapSuccess[] = [];
+    /** Failed swaps attempted for the placed order. */
+    const swapFailures: PeerOrder[] = [];
 
     /**
      * The routine for retrying a portion of the order that failed a swap attempt.
@@ -380,6 +384,7 @@ class OrderBook extends EventEmitter {
           onUpdate && onUpdate({ type: PlaceOrderEventType.SwapSuccess, payload: swapSuccess });
         } catch (err) {
           this.logger.warn(`swap for ${portion.quantity} failed during order matching, will repeat matching routine for failed swap quantity`);
+          swapFailures.push(maker);
           onUpdate && onUpdate({ type: PlaceOrderEventType.SwapFailure, payload: maker });
           await retryFailedSwap(portion.quantity);
         }
@@ -404,6 +409,7 @@ class OrderBook extends EventEmitter {
     return {
       internalMatches,
       swapSuccesses,
+      swapFailures,
       remainingOrder,
     };
   }
@@ -559,9 +565,8 @@ class OrderBook extends EventEmitter {
    * Removes all or part of an own order from the order book and broadcasts an order invalidation packet.
    * @param quantityToRemove the quantity to remove from the order, if undefined then the full order is removed
    * @param takerPubKey the node pub key of the taker who filled this order, if applicable
-   * @returns `true` if the order or portion thereof was removed, otherwise false
    */
-  private removeOwnOrder = (orderId: string, pairId: string, quantityToRemove?: number, takerPubKey?: string): boolean => {
+  private removeOwnOrder = (orderId: string, pairId: string, quantityToRemove?: number, takerPubKey?: string) => {
     const tp = this.getTradingPair(pairId);
     try {
       const removeResult = tp.removeOwnOrder(orderId, quantityToRemove);
@@ -573,11 +578,13 @@ class OrderBook extends EventEmitter {
       if (this.pool) {
         this.pool.broadcastOrderInvalidation(removeResult.order, takerPubKey);
       }
-
-      return true;
     } catch (err) {
-      this.logger.error(`attempted to remove non-existing orderId (${orderId})`);
-      return false;
+      if (quantityToRemove !== undefined) {
+        this.logger.error(`error while removing ${quantityToRemove} of order (${orderId})`, err);
+      } else {
+        this.logger.error(`error while removing order (${orderId})`, err);
+      }
+      throw err;
     }
   }
 

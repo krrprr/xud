@@ -14,7 +14,7 @@ import { SwapSuccess } from '../swaps/types';
 import { TradeInstance } from '../db/types';
 
 /**
- * Creates an xudrpc Order message from a [[StampedOrder]].
+ * Creates an xudrpc Order message from an [[Order]].
  */
 const createOrder = (order: Order) => {
   const grpcOrder = new xudrpc.Order();
@@ -79,6 +79,9 @@ const createPlaceOrderResponse = (result: PlaceOrderResult) => {
 
   const swapSuccesses = result.swapSuccesses.map(swapSuccess => createSwapSuccess(swapSuccess));
   response.setSwapSuccessesList(swapSuccesses);
+
+  const swapFailures = result.swapFailures.map(swapFailure => createSwapFailure(swapFailure));
+  response.setSwapFailuresList(swapFailures);
 
   if (result.remainingOrder) {
     response.setRemainingOrder(createOrder(result.remainingOrder));
