@@ -470,7 +470,7 @@ class GrpcService {
         grpcTrade.setQuantity(trade.quantity);
         grpcTrade.setRHash(trade.rHash ? trade.rHash : '');
         grpcTrade.setMakerOrder(getGrpcOrderFromOrderInstance(makerOrder!));
-        grpcTrade.setTakerOrder(getGrpcOrderFromOrderInstance(takerOrder!));
+        grpcTrade.setTakerOrder(takerOrder ? getGrpcOrderFromOrderInstance(takerOrder) : undefined);
         grpcTrade.setPairId(makerOrder!.pairId);
         tradesList.push(grpcTrade);
       });
