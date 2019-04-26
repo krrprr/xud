@@ -813,6 +813,49 @@ export namespace Order {
 
 }
 
+export class Trade extends jspb.Message { 
+
+    hasMakerOrder(): boolean;
+    clearMakerOrder(): void;
+    getMakerOrder(): Order | undefined;
+    setMakerOrder(value?: Order): void;
+
+
+    hasTakerOrder(): boolean;
+    clearTakerOrder(): void;
+    getTakerOrder(): Order | undefined;
+    setTakerOrder(value?: Order): void;
+
+    getRHash(): string;
+    setRHash(value: string): void;
+
+    getQuantity(): number;
+    setQuantity(value: number): void;
+
+    getPairId(): string;
+    setPairId(value: string): void;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Trade.AsObject;
+    static toObject(includeInstance: boolean, msg: Trade): Trade.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Trade, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Trade;
+    static deserializeBinaryFromReader(message: Trade, reader: jspb.BinaryReader): Trade;
+}
+
+export namespace Trade {
+    export type AsObject = {
+        makerOrder?: Order.AsObject,
+        takerOrder?: Order.AsObject,
+        rHash: string,
+        quantity: number,
+        pairId: string,
+    }
+}
+
 export class OrderUpdate extends jspb.Message { 
 
     hasOrder(): boolean;
