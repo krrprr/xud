@@ -12,7 +12,7 @@ require('yargs')
     },
     rpcport: {
       alias: 'p',
-      default: 8889,
+      default: 8886,
       describe: 'RPC service port',
       type: 'number',
     },

@@ -72,13 +72,13 @@ class Config {
       discover: true,
       discoverminutes: 60 * 12, // 12 hours
       detectexternalip: false,
-      port: 8888, // X = 88, U = 85 in ASCII
+      port: 8885, // X = 88, U = 85 in ASCII
       addresses: [],
     };
     this.rpc = {
       disable: false,
       host: 'localhost',
-      port: 8889,
+      port: 8886,
     };
     this.webproxy = {
       disable: true,
@@ -89,9 +89,9 @@ class Config {
       certpath: path.join(lndDefaultDatadir, 'tls.cert'),
       macaroonpath: path.join(lndDefaultDatadir, 'data', 'chain', 'bitcoin', this.network, 'admin.macaroon'),
       host: 'localhost',
-      port: 10002,
+      port: 10009,
       cltvdelta: 144,
-      nomacaroons: true,
+      nomacaroons: false,
     };
     this.lnd.LTC = {
       disable: false,
@@ -99,9 +99,9 @@ class Config {
       macaroonpath: path.join(lndDefaultDatadir, 'data', 'chain', 'litecoin',
         this.network === XuNetwork.TestNet ? 'testnet4' : this.network, 'admin.macaroon'),
       host: 'localhost',
-      port: 10001,
+      port: 10010,
       cltvdelta: 576,
-      nomacaroons: true,
+      nomacaroons: false,
     };
     this.raiden = {
       disable: false,
