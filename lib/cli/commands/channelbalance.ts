@@ -1,6 +1,39 @@
 import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
-import { ChannelBalanceRequest } from '../../proto/xudrpc_pb';
+import Table, { HorizontalTable } from 'cli-table3';
+import colors from 'colors/safe';
+import { ChannelBalanceRequest, ChannelBalanceResponse } from '../../proto/xudrpc_pb';
+
+const HEADERS = [
+  colors.red('Ticker'),
+  colors.green('balance'),
+  colors.red('Pending open balance'),
+];
+
+const formatChannels = (channels: ChannelBalanceResponse.AsObject) => {
+  const formatted: any[] = [];
+  channels.balancesMap.forEach((channel) => {
+    const element = [];
+    element.push(channel[0], channel[1].balance, channel[1].pendingOpenBalance);
+    formatted.push(element);
+  });
+  return formatted;
+};
+
+const createTable = () => {
+  const table = new Table({
+    head: HEADERS,
+  }) as HorizontalTable;
+  return table;
+};
+
+const displayChannels = (channels: ChannelBalanceResponse.AsObject) => {
+  const table = createTable();
+  const formatted = formatChannels(channels);
+  formatted.forEach(channel => table.push(channel));
+  console.log(colors.underline(colors.bold('\nChannel balance:')));
+  console.log(table.toString());
+};
 
 export const command = 'channelbalance [currency]';
 
@@ -18,5 +51,5 @@ export const handler = (argv: Arguments) => {
   if (argv.currency) {
     request.setCurrency(argv.currency.toUpperCase());
   }
-  loadXudClient(argv).channelBalance(request, callback(argv));
+  loadXudClient(argv).channelBalance(request, callback(argv, displayChannels));
 };
