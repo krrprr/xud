@@ -24,10 +24,15 @@ const createTable = () => {
 
 const formatPeers = (peers: ListPeersResponse.AsObject) => {
   const formattedPeers: string[][] = [];
-  peers.peersList.forEach((peer) => {
+  peers.peersList.forEach((peer: any) => {
     const peerInfo: string[] = [];
-    Object.keys(peer).forEach(key => peerInfo.push(`${peer[key]}`));
-    console.log(peerInfo);
+    Object.keys(peer).forEach((key) => {
+      if (key === 'pairsList') {
+        colors.green(peer[key]);
+      } else {
+        peerInfo.push(`${peer[key]}`);
+      }
+    });
     formattedPeers.push(peerInfo);
   });
   return formattedPeers;
