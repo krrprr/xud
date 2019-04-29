@@ -6,7 +6,7 @@ import { ChannelBalanceRequest, ChannelBalanceResponse } from '../../proto/xudrp
 
 const HEADERS = [
   colors.red('Ticker'),
-  colors.green('balance'),
+  colors.red('balance'),
   colors.red('Pending open balance'),
 ];
 

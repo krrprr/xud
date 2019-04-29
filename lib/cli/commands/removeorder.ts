@@ -1,7 +1,17 @@
 import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
-import { RemoveOrderRequest } from '../../proto/xudrpc_pb';
+import { RemoveOrderRequest, RemoveOrderResponse } from '../../proto/xudrpc_pb';
 import { SATOSHIS_PER_COIN } from '../utils';
+import Table, { VerticalTable } from 'cli-table3';
+import colors from 'colors/safe';
+
+const displayRemoveOrder = (res: RemoveOrderResponse.AsObject) => {
+  const table = new Table() as VerticalTable;
+  const quantityOnHold = colors.red('Quantity on hold');
+  table.push({ [quantityOnHold]: res.quantityOnHold });
+  console.log(colors.underline(colors.bold('\nOrder removed:')));
+  console.log(table.toString());
+};
 
 export const command = 'removeorder <order_id> [quantity]';
 
