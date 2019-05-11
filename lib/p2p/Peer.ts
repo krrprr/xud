@@ -839,6 +839,12 @@ class Peer extends EventEmitter {
   }
 
   private handleDisconnecting = (packet: packets.DisconnectingPacket): void  => {
+    if (!this.sessionInitPacket && packet.body && packet.body.reason === DisconnectionReason.Banned) {
+      this.recvDisconnectionReason = packet.body.reason;
+      this.emit('reputation', ReputationEvent.ManualBan);
+      // TODO: update the node instance in the database to not attempt to reconnect on restart
+    }
+
     if (!this.recvDisconnectionReason && packet.body && packet.body.reason !== undefined) {
       this.logger.debug(`received disconnecting packet from ${this.label}:${JSON.stringify(packet.body)}`);
       this.recvDisconnectionReason = packet.body.reason;
