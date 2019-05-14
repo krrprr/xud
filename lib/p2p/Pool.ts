@@ -267,8 +267,11 @@ class Pool extends EventEmitter {
       // if allowKnown is false, allow nodes that we don't aware of
       const isAllowed = allowKnown || !this.nodes.has(node.nodePubKey);
 
+      // Check if we are banned by the node.
+      const hasNotBannedUs = !node.bannedBy;
+
       // determine whether we should attempt to connect
-      if (isNotUs && hasAddresses && isAllowed) {
+      if (isNotUs && hasAddresses && isAllowed && hasNotBannedUs) {
         connectionPromises.push(this.tryConnectNode(node, retryConnecting));
       }
     });
@@ -452,12 +455,20 @@ class Pool extends EventEmitter {
     if (!this.nodes.has(peerPubKey)) {
       await this.nodes.createNode({
         addresses,
+        bannedBy: false,
         nodePubKey: peerPubKey,
         lastAddress: peer.inbound ? undefined : peer.address,
       });
     } else {
       // the node is known, update its listening addresses
       await this.nodes.updateAddresses(peer.nodePubKey!, addresses, peer.inbound ? undefined : peer.address);
+    }
+
+    // Check if peer has previously banned us if so set `bannedBy` to false
+    const node = await this.repository.getNode(peerPubKey);
+    if (node && node.bannedBy) {
+      await this.repository.setBannedBy(peerPubKey, false);
+      this.logger.info(`Peer: ${peerPubKey} has unbanned us`);
     }
   }
 
@@ -494,6 +505,7 @@ class Pool extends EventEmitter {
       if (node) {
         const Node: NodeConnectionInfo = {
           nodePubKey,
+          bannedBy: node.bannedBy,
           addresses: node.addresses,
           lastAddress: node.lastAddress,
         };
@@ -718,6 +730,7 @@ class Pool extends EventEmitter {
       if (connectedPeer.nodePubKey !== peer.nodePubKey && connectedPeer.addresses && connectedPeer.addresses.length > 0) {
         // don't send the peer itself or any peers for whom we don't have listening addresses
         connectedNodesInfo.push({
+          bannedBy: false, /// Since we are connected we are not banned by the node.
           nodePubKey: connectedPeer.nodePubKey!,
           addresses: connectedPeer.addresses,
         });
@@ -765,6 +778,12 @@ class Pool extends EventEmitter {
 
     peer.once('close', () => this.handlePeerClose(peer));
 
+    peer.on('bannedBy', async (nodePubKey: string) => {
+      // set peer as banning us
+      await this.nodes.setBannedBy(nodePubKey);
+      this.logger.info(`Peer: ${nodePubKey} has banned you`);
+    });
+
     peer.on('reputation', async (event) => {
       this.logger.debug(`Peer (${peer.label}): reputation event: ${ReputationEvent[event]}`);
       if (peer.nodePubKey) {
@@ -799,7 +818,7 @@ class Pool extends EventEmitter {
 
     if (!peer.inbound && peer.nodePubKey && shouldReconnect && (addresses.length || peer.address)) {
       this.logger.debug(`attempting to reconnect to a disconnected peer ${peer.nodePubKey}`);
-      const node = { addresses, lastAddress: peer.address, nodePubKey: peer.nodePubKey };
+      const node = { addresses, bannedBy: false, lastAddress: peer.address, nodePubKey: peer.nodePubKey };
       await this.tryConnectNode(node, true);
     }
   }

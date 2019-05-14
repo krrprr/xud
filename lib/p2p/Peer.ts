@@ -40,6 +40,7 @@ interface Peer {
   /** Adds a listener to be called when a previously active pair is dropped by the peer or deactivated. */
   on(event: 'pairDropped', listener: (pairId: string) => void): this;
   on(event: 'nodeStateUpdate', listener: () => void): this;
+  on(event: 'bannedBy', listener: (nodePubKey: string) => void): this;
   once(event: 'close', listener: () => void): this;
   emit(event: 'connect'): boolean;
   emit(event: 'reputation', reputationEvent: ReputationEvent): boolean;
@@ -51,6 +52,7 @@ interface Peer {
   /** Notifies listeners that a previously active pair was dropped by the peer or deactivated. */
   emit(event: 'pairDropped', pairId: string): boolean;
   emit(event: 'nodeStateUpdate'): boolean;
+  emit(event: 'bannedBy', nodePubKey: string): boolean;
 }
 
 /** Represents a remote peer and manages a TCP socket and incoming/outgoing communication with that peer. */
@@ -831,10 +833,10 @@ class Peer extends EventEmitter {
   }
 
   private handleDisconnecting = (packet: packets.DisconnectingPacket): void  => {
-    if (!this.sessionInitPacket && packet.body && packet.body.reason === DisconnectionReason.Banned) {
+    if (packet.body && packet.body.reason === DisconnectionReason.Banned) {
       this.recvDisconnectionReason = packet.body.reason;
-      this.emit('reputation', ReputationEvent.ManualBan);
-      // TODO: update the node instance in the database to not attempt to reconnect on restart
+      // if we are banned by the peer change `bannedBy` in DB.
+      this.emit('bannedBy', this.nodeState!.nodePubKey);
     }
 
     if (!this.recvDisconnectionReason && packet.body && packet.body.reason !== undefined) {

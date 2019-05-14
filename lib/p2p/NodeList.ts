@@ -40,6 +40,10 @@ class NodeList extends EventEmitter {
     super();
   }
 
+  public setBannedBy = async (nodePubKey: string, bannedBy = true) => {
+    return this.repository.setBannedBy(nodePubKey, bannedBy);
+  }
+
   /**
    * Check if a node with a given nodePubKey exists.
    */
