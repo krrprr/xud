@@ -10,7 +10,6 @@ export type NodeConnectionInfo = {
   nodePubKey: string;
   addresses: Address[];
   lastAddress?: Address;
-  bannedBy: boolean;
 };
 
 export type NodeState = {

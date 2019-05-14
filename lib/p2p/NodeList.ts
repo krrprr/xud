@@ -29,6 +29,7 @@ interface NodeList {
 class NodeList extends EventEmitter {
   private nodes = new Map<string, NodeInstance>();
   private bannedNodes = new Map<string, NodeInstance>();
+  private nodesBannedBy = new Set<string>();
 
   private static readonly BAN_THRESHOLD = -50;
 
@@ -40,8 +41,29 @@ class NodeList extends EventEmitter {
     super();
   }
 
-  public setBannedBy = async (nodePubKey: string, bannedBy = true) => {
+  /**
+   * Set status of peer that bans/unbans and persist in DB
+   */
+  public persistBannedBy = async (nodePubKey: string, bannedBy = true) => {
     return this.repository.setBannedBy(nodePubKey, bannedBy);
+  }
+
+  /**
+   * Check if we are banned by this node
+   */
+  public isBannedBy = (nodePubKey: string): boolean => {
+    return this.nodesBannedBy.has(nodePubKey);
+  }
+
+  /**
+   * Add / remove a peer that bans us to list
+   */
+  public setBannedBy = (nodePubKey: string, add = true) => {
+    if (add) {
+      this.nodesBannedBy.add(nodePubKey);
+    } else {
+      this.nodesBannedBy.delete(nodePubKey);
+    }
   }
 
   /**
@@ -84,6 +106,8 @@ class NodeList extends EventEmitter {
     nodes.forEach(async (node) => {
       if (node.banned) {
         this.bannedNodes.set(node.nodePubKey, node);
+      } else if (node.bannedBy) {
+        this.nodesBannedBy.add(node.nodePubKey);
       } else {
         this.nodes.set(node.nodePubKey, node);
         const events = await this.repository.getReputationEvents(node);

@@ -268,10 +268,10 @@ class Pool extends EventEmitter {
       const isAllowed = allowKnown || !this.nodes.has(node.nodePubKey);
 
       // Check if we are banned by the node.
-      const hasNotBannedUs = !node.bannedBy;
+      const notBannedBy = !this.nodes.isBannedBy(node.nodePubKey);
 
       // determine whether we should attempt to connect
-      if (isNotUs && hasAddresses && isAllowed && hasNotBannedUs) {
+      if (isNotUs && hasAddresses && isAllowed && notBannedBy) {
         connectionPromises.push(this.tryConnectNode(node, retryConnecting));
       }
     });
@@ -455,7 +455,6 @@ class Pool extends EventEmitter {
     if (!this.nodes.has(peerPubKey)) {
       await this.nodes.createNode({
         addresses,
-        bannedBy: false,
         nodePubKey: peerPubKey,
         lastAddress: peer.inbound ? undefined : peer.address,
       });
@@ -468,6 +467,7 @@ class Pool extends EventEmitter {
     const node = await this.repository.getNode(peerPubKey);
     if (node && node.bannedBy) {
       await this.repository.setBannedBy(peerPubKey, false);
+      this.nodes.setBannedBy(peerPubKey, false);
       this.logger.info(`Peer: ${peerPubKey} has unbanned us`);
     }
   }
@@ -505,7 +505,6 @@ class Pool extends EventEmitter {
       if (node) {
         const Node: NodeConnectionInfo = {
           nodePubKey,
-          bannedBy: node.bannedBy,
           addresses: node.addresses,
           lastAddress: node.lastAddress,
         };
@@ -730,7 +729,6 @@ class Pool extends EventEmitter {
       if (connectedPeer.nodePubKey !== peer.nodePubKey && connectedPeer.addresses && connectedPeer.addresses.length > 0) {
         // don't send the peer itself or any peers for whom we don't have listening addresses
         connectedNodesInfo.push({
-          bannedBy: false, /// Since we are connected we are not banned by the node.
           nodePubKey: connectedPeer.nodePubKey!,
           addresses: connectedPeer.addresses,
         });
@@ -780,7 +778,8 @@ class Pool extends EventEmitter {
 
     peer.on('bannedBy', async (nodePubKey: string) => {
       // set peer as banning us
-      await this.nodes.setBannedBy(nodePubKey);
+      await this.nodes.persistBannedBy(nodePubKey);
+      this.nodes.setBannedBy(nodePubKey);
       this.logger.info(`Peer: ${nodePubKey} has banned you`);
     });
 
