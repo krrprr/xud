@@ -1,39 +1,64 @@
 import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
-import Table, { HorizontalTable } from 'cli-table3';
 import colors from 'colors/safe';
-import { ListPeersRequest, ListPeersResponse } from '../../proto/xudrpc_pb';
+import Table, { HorizontalTable } from 'cli-table3';
+import { generateHeaders } from '../utils';
+import { ListPeersRequest, ListPeersResponse, Peer } from '../../proto/xudrpc_pb';
 
 const HEADERS = [
-  colors.red('address'),
-  colors.red('node public key'),
-  colors.red('lnd public keys'),
-  colors.red('inbound'),
-  colors.red('pairs list'),
-  colors.red('xud version'),
-  colors.red('seconds connected'),
-  colors.red('raiden address'),
+  'address',
+  'public key',
+  'inbound',
+  'xud version',
+  'uptime',
+  'pairs list',
+  'lnd public keys',
+  'raiden address',
 ];
 
 const createTable = () => {
   const table = new Table({
-    head: HEADERS,
+    head: generateHeaders(HEADERS),
   }) as HorizontalTable;
   return table;
 };
 
+const trimPubKey = (key: string) => {
+  if (key.length <= 0) {
+    return '';
+  }
+  return `${key.slice(0, 6)}...`;
+};
+
+const formatPairList = (pairs: string[]) => {
+  let pairString = '';
+  pairs.forEach((pair) => {
+    pairString = pairString + `\n ${pair}`;
+  });
+  return pairString;
+};
+
+const formatLndPubKeys = (lndKeys: string[][]) => {
+  let str = '';
+  lndKeys.forEach((client) => {
+    str =  str + `\n ${client[0]} ${trimPubKey(client[1])}`;
+  });
+  return str;
+};
+
 const formatPeers = (peers: ListPeersResponse.AsObject) => {
   const formattedPeers: string[][] = [];
-  peers.peersList.forEach((peer: any) => {
-    const peerInfo: string[] = [];
-    Object.keys(peer).forEach((key) => {
-      if (key === 'pairsList') {
-        colors.green(peer[key]);
-      } else {
-        peerInfo.push(`${peer[key]}`);
-      }
-    });
-    formattedPeers.push(peerInfo);
+  peers.peersList.forEach((peer: Peer.AsObject) => {
+    formattedPeers.push([
+      peer.address,
+      trimPubKey(peer.nodePubKey),
+      `${peer.inbound}`,
+      peer.xudVersion,
+      `${peer.secondsConnected.toString()} seconds`,
+      formatPairList(peer.pairsList),
+      formatLndPubKeys(peer.lndPubKeysMap),
+      trimPubKey(peer.raidenAddress),
+    ]);
   });
   return formattedPeers;
 };
@@ -43,6 +68,7 @@ const displayTables = (peers: ListPeersResponse.AsObject) => {
   formatPeers(peers).forEach((peer) => {
     table.push(peer);
   });
+  console.log(colors.underline(colors.bold('\nPeers:')));
   console.log(table.toString());
 };
 

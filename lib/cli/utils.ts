@@ -1,9 +1,15 @@
 import { Arguments, Argv } from 'yargs';
+import colors from 'colors/safe';
 import { callback, loadXudClient } from './command';
 import { PlaceOrderRequest, PlaceOrderEvent, OrderSide, PlaceOrderResponse, Order, SwapSuccess, SwapFailure } from '../proto/xudrpc_pb';
 
 export const SATOSHIS_PER_COIN = 10 ** 8;
 
+export const generateHeaders = (headers: string[]) => {
+  return headers.map((header) => {
+    return colors.blue(header);
+  });
+};
 export const orderBuilder = (argv: Argv, command: string) => argv
   .option('quantity', {
     type: 'number',
