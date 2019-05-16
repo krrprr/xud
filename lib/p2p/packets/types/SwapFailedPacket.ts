@@ -3,7 +3,6 @@ import PacketType from '../PacketType';
 import * as pb from '../../../proto/xudp2p_pb';
 import { removeUndefinedProps } from '../../../utils/utils';
 import { SwapFailureReason } from '../../../constants/enums';
-
 // TODO: proper error handling
 export type SwapFailedPacketBody = {
   rHash: string;
@@ -59,7 +58,7 @@ class SwapFailedPacket extends Packet<SwapFailedPacketBody> {
     msg.setReqId(this.header.reqId!);
     msg.setRHash(this.body!.rHash);
     if (this.body!.errorMessage) {
-      msg.setErrorMessage(this.body!.errorMessage);
+      msg.setErrorMessage(this.body!.errorMessage!);
     }
     msg.setFailureReason(this.body!.failureReason);
 
