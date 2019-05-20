@@ -3,6 +3,7 @@ import PacketType from '../PacketType';
 import * as pb from '../../../proto/xudp2p_pb';
 import { removeUndefinedProps } from '../../../utils/utils';
 import { SwapFailureReason } from '../../../constants/enums';
+
 export type SwapFailedPacketBody = {
   rHash: string;
   failureReason: SwapFailureReason;

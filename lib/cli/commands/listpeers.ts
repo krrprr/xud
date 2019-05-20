@@ -8,12 +8,8 @@ import { ListPeersRequest, ListPeersResponse, Peer } from '../../proto/xudrpc_pb
 const HEADERS = [
   'address',
   'public key',
-  'inbound',
-  'xud version',
-  'uptime',
   'pairs list',
-  'lnd public keys',
-  'raiden address',
+  'details',
 ];
 
 const createTable = () => {
@@ -41,7 +37,7 @@ const formatPairList = (pairs: string[]) => {
 const formatLndPubKeys = (lndKeys: string[][]) => {
   let str = '';
   lndKeys.forEach((client) => {
-    str =  str + `\n ${client[0]} ${trimPubKey(client[1])}`;
+    str =  str + `${client[0]} ${trimPubKey(client[1])}`;
   });
   return str;
 };
@@ -52,12 +48,9 @@ const formatPeers = (peers: ListPeersResponse.AsObject) => {
     formattedPeers.push([
       peer.address,
       trimPubKey(peer.nodePubKey),
-      `${peer.inbound}`,
-      peer.xudVersion,
-      `${peer.secondsConnected.toString()} seconds`,
       formatPairList(peer.pairsList),
-      formatLndPubKeys(peer.lndPubKeysMap),
-      trimPubKey(peer.raidenAddress),
+      // tslint:disable-next-line:max-line-length
+      `inbound: ${peer.inbound}\nversion: ${peer.xudVersion}\ntime connected: ${peer.secondsConnected.toString()} seconds\nlnd keys: ${formatLndPubKeys(peer.lndPubKeysMap)}\nraiden address: ${trimPubKey(peer.raidenAddress)}`,
     ]);
   });
   return formattedPeers;

@@ -10,6 +10,7 @@ export const generateHeaders = (headers: string[]) => {
     return colors.blue(header);
   });
 };
+
 export const orderBuilder = (argv: Argv, command: string) => argv
   .option('quantity', {
     type: 'number',
