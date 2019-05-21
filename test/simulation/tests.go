@@ -22,28 +22,36 @@ import (
 func testNetworkInit(net *xudtest.NetworkHarness, ht *harnessTest) {
 	for _, node := range net.ActiveNodes {
 		// Verify connectivity.
-		timeout := time.Now().Add(10 * time.Second)
-		for {
-			req := &xudrpc.GetInfoRequest{}
-			res, err := node.Client.GetInfo(ht.ctx, req)
-			ht.assert.NoError(err)
-			if len(res.Lnd["BTC"].Chains) == 1 && len(res.Lnd["LTC"].Chains) == 1 {
-				ht.assert.Equal(res.Lnd["BTC"].Chains[0].Chain, "bitcoin")
-				ht.assert.Equal(res.Lnd["BTC"].Chains[0].Network, "simnet")
-				ht.assert.Equal(res.Lnd["LTC"].Chains[0].Chain, "litecoin")
-				ht.assert.Equal(res.Lnd["LTC"].Chains[0].Network, "simnet")
-				// Set the node public key.
-				node.SetPubKey(res.NodePubKey)
-				// Set the node public key.
-				node.SetPubKey(res.NodePubKey)
-				// Add pair to the node.
-				ht.act.addPair(node, "LTC", "BTC", xudrpc.AddCurrencyRequest_LND)
-				break
+		req := &xudrpc.GetInfoRequest{}
+		res, err := node.Client.GetInfo(ht.ctx, req)
+		/*
+			fmt.Printf("res before for BEFORE %v", res)
+			timeout := time.After(14 * time.Millisecond)
+			fmt.Printf("res before for AFTER %v", res)
+			for res == nil {
+				select {
+				case <-timeout:
+					fmt.Printf("waiting for synced chains timed out")
+					ht.assert.False(true, "waiting for synced chains timeout")
+				default:
+					fmt.Printf("waiting for chains to sycn...")
+				}
 			}
-			ht.assert.False(time.Now().After(timeout), "waiting for synced chains timeout")
-			// retry interval
-			time.Sleep(100 * time.Millisecond)
-		}
+		*/
+		// for len(res.Lnd["BTC"].Chains) != 1 && len(res.Lnd["LTC"].Chains) != 1 {
+		ht.assert.NoError(err)
+		ht.assert.Equal(len(res.Lnd["BTC"].Chains), 1)
+		ht.assert.Equal(len(res.Lnd["LTC"].Chains), 1)
+		ht.assert.Equal(res.Lnd["BTC"].Chains[0].Chain, "bitcoin")
+		ht.assert.Equal(res.Lnd["BTC"].Chains[0].Network, "simnet")
+		ht.assert.Equal(res.Lnd["LTC"].Chains[0].Chain, "litecoin")
+		ht.assert.Equal(res.Lnd["LTC"].Chains[0].Network, "simnet")
+		// Set the node public key.
+		node.SetPubKey(res.NodePubKey)
+		// Set the node public key.
+		node.SetPubKey(res.NodePubKey)
+		// Add pair to the node.
+		ht.act.addPair(node, "LTC", "BTC", xudrpc.AddCurrencyRequest_LND)
 	}
 }
 
