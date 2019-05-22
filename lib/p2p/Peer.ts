@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import crypto from 'crypto';
 import secp256k1 from 'secp256k1';
 import stringify from 'json-stable-stringify';
-import { ReputationEvent, DisconnectionReason, SwapClient } from '../constants/enums';
+import { ReputationEvent, DisconnectionReason, SwapClientType } from '../constants/enums';
 import Parser from './Parser';
 import * as packets from './packets/types';
 import Logger from '../Logger';
@@ -68,6 +68,8 @@ class Peer extends EventEmitter {
   public discoverTimer?: NodeJS.Timer;
   /** Trading pairs advertised by this peer which we have verified that we can swap. */
   public activePairs = new Set<string>();
+  /** Currencies that we have verified that we can swap with for this peer. */
+  public verifiedCurrencies = new Set<string>();
   /** Whether we have received and authenticated a [[SessionInitPacket]] from the peer. */
   private opened = false;
   private opening = false;
@@ -169,14 +171,14 @@ class Peer extends EventEmitter {
     return peer;
   }
 
-  public getIdentifier(clientType: SwapClient, currency?: string): string | undefined {
+  public getIdentifier(clientType: SwapClientType, currency?: string): string | undefined {
     if (!this.nodeState) {
       return undefined;
     }
-    if (clientType === SwapClient.Lnd && currency) {
+    if (clientType === SwapClientType.Lnd && currency) {
       return this.nodeState.lndPubKeys[currency];
     }
-    if (clientType === SwapClient.Raiden) {
+    if (clientType === SwapClientType.Raiden) {
       return this.nodeState.raidenAddress;
     }
     return;
@@ -343,6 +345,9 @@ class Peer extends EventEmitter {
       throw new Error('cannot deactivate a trading pair before handshake is complete');
     }
     if (this.activePairs.delete(pairId)) {
+      const [baseCurrency, quoteCurrency] = pairId.split('/');
+      this.verifiedCurrencies.delete(baseCurrency);
+      this.verifiedCurrencies.delete(quoteCurrency);
       this.emit('pairDropped', pairId);
     }
     // TODO: notify peer that we have deactivated this pair?
@@ -457,7 +462,7 @@ class Peer extends EventEmitter {
    * Waits for a packet to be received from peer.
    * @returns A promise that is resolved once the packet is received or rejects on timeout.
    */
-  private wait = (reqId: string, resType: ResponseType, timeout?: number, cb?: (packet: Packet) => void): Promise<Packet> => {
+  public wait = (reqId: string, resType: ResponseType, timeout?: number, cb?: (packet: Packet) => void): Promise<Packet> => {
     const entry = this.getOrAddPendingResponseEntry(reqId, resType);
     return new Promise((resolve, reject) => {
       entry.addJob(resolve, reject);
@@ -797,9 +802,16 @@ class Peer extends EventEmitter {
     await this.sendPacket(packet);
   }
 
-  public sendGetNodes = async (): Promise<void> => {
+  public sendGetNodes = async (): Promise<packets.GetNodesPacket> => {
     const packet =  new packets.GetNodesPacket();
     await this.sendPacket(packet);
+    return packet;
+  }
+
+  public discoverNodes = async (): Promise<number> => {
+    const packet = await this.sendGetNodes();
+    const res = await this.wait(packet.header.id, packet.responseType);
+    return res.body.length;
   }
 
   private sendPong = async (pingId: string): Promise<void> => {
