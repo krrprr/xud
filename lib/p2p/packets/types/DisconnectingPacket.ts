@@ -6,6 +6,7 @@ import { removeUndefinedProps } from '../../../utils/utils';
 
 export type DisconnectingPacketBody = {
   reason: DisconnectionReason;
+  peerPubKey: string;
   payload?: string;
 };
 
@@ -40,6 +41,7 @@ class DisconnectingPacket extends Packet<DisconnectingPacketBody> {
       },
       body: removeUndefinedProps({
         reason: obj.reason,
+        peerPubKey: obj.peerPubKey,
         payload: obj.payload || undefined,
       }),
     });
@@ -49,6 +51,7 @@ class DisconnectingPacket extends Packet<DisconnectingPacketBody> {
     const msg = new pb.DisconnectingPacket();
     msg.setId(this.header.id);
     msg.setReason(this.body!.reason);
+    msg.setPeerPubKey(this.body!.peerPubKey);
     msg.setPayload(this.body!.payload!);
 
     return msg.serializeBinary();

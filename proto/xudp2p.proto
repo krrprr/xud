@@ -87,6 +87,7 @@ message DisconnectingPacket {
     string id = 1;
     uint32 reason = 2;
     string payload = 3;
+    string peer_pub_key = 4;
 }
 
 message GetNodesPacket {

@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import Parser from '../../lib/p2p/Parser';
 import { Packet, PacketType } from '../../lib/p2p/packets';
 import * as packets from '../../lib/p2p/packets/types';
+import { DisconnectingPacketBody } from '../../lib/p2p/packets/types/DisconnectingPacket';
 import { removeUndefinedProps } from '../../lib/utils/utils';
 import { DisconnectionReason, SwapFailureReason, XuNetwork } from '../../lib/constants/enums';
 import uuid = require('uuid');
@@ -239,8 +240,9 @@ describe('Parser', () => {
     testInvalidPacket(new packets.NodeStateUpdatePacket(nodeStateUpdate, uuid()));
     testInvalidPacket(new packets.NodeStateUpdatePacket({ ...nodeStateUpdate, addresses: [{} as Address] }));
 
-    const disconnectingPacketBody = {
+    const disconnectingPacketBody: DisconnectingPacketBody = {
       reason: DisconnectionReason.IncompatibleProtocolVersion,
+      peerPubKey: '03fd337659e99e628d0487e4f87acf93e353db06f754dccc402f2de1b857a319d0',
       payload: uuid(),
     };
     testValidPacket(new packets.DisconnectingPacket(disconnectingPacketBody));

@@ -219,7 +219,7 @@ class Pool extends EventEmitter {
       const peer = this.peers.get(nodePubKey);
       if (peer) {
         const lastNegativeEvents = events.filter(e => reputationEventWeight[e.event] < 0).slice(0, 10);
-        return peer.close(DisconnectionReason.Banned, JSON.stringify(lastNegativeEvents));
+        return peer.close(this.nodeState.nodePubKey, DisconnectionReason.Banned, JSON.stringify(lastNegativeEvents));
       }
       return;
     });
@@ -232,7 +232,7 @@ class Pool extends EventEmitter {
       try {
         const peer = new Peer(Logger.DISABLED_LOGGER, address, this.network);
         await peer.beginOpen(this.nodeState, this.nodeKey, this.nodeState.nodePubKey);
-        await peer.close();
+        await peer.close(this.nodeState.nodePubKey);
         assert.fail();
       } catch (err) {
         if (typeof err.message === 'string' && err.message.includes(DisconnectionReason[DisconnectionReason.ConnectedToSelf])) {
@@ -473,7 +473,7 @@ class Pool extends EventEmitter {
   public closePeer = async (nodePubKey: string, reason?: DisconnectionReason, reasonPayload?: string) => {
     const peer = this.peers.get(nodePubKey);
     if (peer) {
-      await peer.close(reason, reasonPayload);
+      await peer.close(this.nodeState.nodePubKey, reason, reasonPayload);
       this.logger.info(`Disconnected from ${peer.nodePubKey}@${addressUtils.toString(peer.address)}`);
     } else {
       throw(errors.NOT_CONNECTED(nodePubKey));
@@ -686,37 +686,37 @@ class Pool extends EventEmitter {
     const peerPubKey = peer.nodePubKey!;
 
     if (peerPubKey === this.nodeState.nodePubKey) {
-      await peer.close(DisconnectionReason.ConnectedToSelf);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.ConnectedToSelf);
       throw errors.ATTEMPTED_CONNECTION_TO_SELF;
     }
 
     // Check if version is semantic, and higher than minCompatibleVersion.
     if (!semver.valid(peer.version)) {
-      await peer.close(DisconnectionReason.MalformedVersion);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.MalformedVersion);
       throw errors.MALFORMED_VERSION(addressUtils.toString(peer.address), peer.version);
     }
     // dev.note: compare returns 0 if v1 == v2, or 1 if v1 is greater, or -1 if v2 is greater.
     if (semver.compare(peer.version, minCompatibleVersion) === -1) {
-      await peer.close(DisconnectionReason.IncompatibleProtocolVersion);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.IncompatibleProtocolVersion);
       throw errors.INCOMPATIBLE_VERSION(addressUtils.toString(peer.address), minCompatibleVersion, peer.version);
     }
 
     if (!this.connected) {
       // if we have disconnected the pool, don't allow any new connections to open
-      await peer.close(DisconnectionReason.NotAcceptingConnections);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.NotAcceptingConnections);
       throw errors.POOL_CLOSED;
     }
 
     if (this.nodes.isBanned(peerPubKey)) {
       // TODO: Ban IP address for this session if banned peer attempts repeated connections.
-      await peer.close(DisconnectionReason.Banned);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.Banned);
       throw errors.NODE_IS_BANNED(peerPubKey);
     }
 
     if (this.peers.has(peerPubKey)) {
       // TODO: Penalize peers that attempt to create duplicate connections to us more then once.
       // the first time might be due connection retries
-      await peer.close(DisconnectionReason.AlreadyConnected);
+      await peer.close(this.nodeState.nodePubKey, DisconnectionReason.AlreadyConnected);
       throw errors.NODE_ALREADY_CONNECTED(peerPubKey, peer.address);
     }
 
@@ -832,7 +832,7 @@ class Pool extends EventEmitter {
   private closePeers = () => {
     const closePromises = [];
     for (const peer of this.peers.values()) {
-      closePromises.push(peer.close(DisconnectionReason.Shutdown));
+      closePromises.push(peer.close(this.nodeState.nodePubKey, DisconnectionReason.Shutdown));
     }
     return Promise.all(closePromises);
   }
@@ -840,10 +840,10 @@ class Pool extends EventEmitter {
   private closePendingConnections = () => {
     const closePromises = [];
     for (const peer of this.pendingOutboundPeers.values()) {
-      closePromises.push(peer.close());
+      closePromises.push(peer.close(this.nodeState.nodePubKey));
     }
     for (const peer of this.pendingInboundPeers) {
-      closePromises.push(peer.close());
+      closePromises.push(peer.close(this.nodeState.nodePubKey));
     }
     return Promise.all(closePromises);
   }

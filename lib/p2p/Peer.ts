@@ -248,7 +248,7 @@ class Peer extends EventEmitter {
   /**
    * Close a peer by ensuring the socket is destroyed and terminating all timers.
    */
-  public close = async (reason?: DisconnectionReason, reasonPayload?: string): Promise<void> => {
+  public close = async (localPubKey?: string, reason?: DisconnectionReason, reasonPayload?: string): Promise<void> => {
     if (this.closed) {
       return;
     }
@@ -260,7 +260,7 @@ class Peer extends EventEmitter {
       if (reason !== undefined) {
         this.logger.debug(`Peer (${ this.label }): closing socket. reason: ${DisconnectionReason[reason]}`);
         this.sentDisconnectionReason = reason;
-        await this.sendPacket(new packets.DisconnectingPacket({ reason, payload: reasonPayload }));
+        await this.sendPacket(new packets.DisconnectingPacket({ reason, payload: reasonPayload, peerPubKey: localPubKey! }));
       }
 
       if (!this.socket.destroyed) {
@@ -497,7 +497,7 @@ class Peer extends EventEmitter {
         const err = errors.RESPONSE_TIMEOUT(request);
         this.emitError(err.message);
         entry.reject(err.message);
-        await this.close(DisconnectionReason.ResponseStalling, packetId);
+        await this.close(this.nodePubKey, DisconnectionReason.ResponseStalling, packetId);
       }
     }
   }
@@ -611,7 +611,7 @@ class Peer extends EventEmitter {
         case errorCodes.FRAMER_INVALID_MSG_LENGTH:
           this.logger.warn(`Peer (${this.label}): ${err.message}`);
           this.emit('reputation', ReputationEvent.WireProtocolErr);
-          await this.close(DisconnectionReason.WireProtocolErr, err.message);
+          await this.close(this.nodePubKey, DisconnectionReason.WireProtocolErr, err.message);
       }
     });
   }
@@ -692,14 +692,14 @@ class Peer extends EventEmitter {
 
     // verify that the init packet came from the expected node
     if (expectedNodePubKey && expectedNodePubKey !== sourceNodePubKey) {
-      await this.close(DisconnectionReason.UnexpectedIdentity);
+      await this.close(this.nodePubKey, DisconnectionReason.UnexpectedIdentity);
       throw errors.UNEXPECTED_NODE_PUB_KEY(sourceNodePubKey, expectedNodePubKey, addressUtils.toString(this.address));
     }
 
     // verify that the init packet was intended for us
     if (targetNodePubKey !== nodePubKey) {
       this.emit('reputation', ReputationEvent.InvalidAuth);
-      await this.close(DisconnectionReason.AuthFailureInvalidTarget);
+      await this.close(this.nodePubKey, DisconnectionReason.AuthFailureInvalidTarget);
       throw errors.AUTH_FAILURE_INVALID_TARGET(sourceNodePubKey, targetNodePubKey);
     }
 
@@ -714,7 +714,7 @@ class Peer extends EventEmitter {
 
     if (!verified) {
       this.emit('reputation', ReputationEvent.InvalidAuth);
-      await this.close(DisconnectionReason.AuthFailureInvalidSignature);
+      await this.close(this.nodePubKey, DisconnectionReason.AuthFailureInvalidSignature);
       throw errors.AUTH_FAILURE_INVALID_SIGNATURE(sourceNodePubKey);
     }
 
@@ -848,7 +848,7 @@ class Peer extends EventEmitter {
     if (packet.body && packet.body.reason === DisconnectionReason.Banned) {
       this.recvDisconnectionReason = packet.body.reason;
       // if we are banned by the peer change `bannedBy` in DB.
-      this.emit('bannedBy', this.nodeState!.nodePubKey);
+      this.emit('bannedBy', packet.body.peerPubKey);
     }
 
     if (!this.recvDisconnectionReason && packet.body && packet.body.reason !== undefined) {

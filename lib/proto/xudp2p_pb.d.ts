@@ -428,6 +428,9 @@ export class DisconnectingPacket extends jspb.Message {
     getPayload(): string;
     setPayload(value: string): void;
 
+    getPeerPubKey(): string;
+    setPeerPubKey(value: string): void;
+
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): DisconnectingPacket.AsObject;
@@ -444,6 +447,7 @@ export namespace DisconnectingPacket {
         id: string,
         reason: number,
         payload: string,
+        peerPubKey: string,
     }
 }
 

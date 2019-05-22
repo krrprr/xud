@@ -168,7 +168,7 @@
     },
     "/v1/discovernodes": {
       "post": {
-        "summary": "Discover nodes from a specific peer. Apply new connection and return the list.",
+        "summary": "Discover nodes from a specific peer and apply new connections",
         "operationId": "DiscoverNodes",
         "responses": {
           "200": {
