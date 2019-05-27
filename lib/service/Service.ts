@@ -18,6 +18,7 @@ import { errors as swapsErrors } from '../swaps/errors';
  * The components required by the API service layer.
  */
 type ServiceComponents = {
+  raidenDisabled: boolean;
   orderBook: OrderBook;
   swapClientManager: SwapClientManager;
   pool: Pool;
@@ -65,6 +66,9 @@ const argChecks = {
   VALID_SWAP_CLIENT: ({ swapClient }: { swapClient: number }) => {
     if (!SwapClientType[swapClient]) throw errors.INVALID_ARGUMENT('swap client is not recognized');
   },
+  WETH_DISABLED: ({ base, quote, isDisabled }: {base: string, quote: string, isDisabled: boolean }) => {
+    if ((base === 'WETH' || quote === 'WETH')  && isDisabled) throw errors.WETH_DISABLED();
+  },
 };
 
 /** Class containing the available RPC methods for XUD */
@@ -75,6 +79,7 @@ class Service extends EventEmitter {
   private pool: Pool;
   private version: string;
   private swaps: Swaps;
+  private raidenDisabled: boolean;
 
   /** Create an instance of available RPC methods and bind all exposed functions. */
   constructor(components: ServiceComponents) {
@@ -86,6 +91,7 @@ class Service extends EventEmitter {
     this.pool = components.pool;
     this.swaps = components.swaps;
 
+    this.raidenDisabled = components.raidenDisabled;
     this.version = components.version;
   }
 
@@ -334,6 +340,12 @@ class Service extends EventEmitter {
     callback?: (e: PlaceOrderEvent) => void,
   ) => {
     const { pairId, price, quantity, orderId, side } = args;
+    const pair = pairId.split('/');
+    argChecks.WETH_DISABLED({
+      base: pair[0],
+      quote: pair[1],
+      isDisabled: this.raidenDisabled},
+    );
     argChecks.PRICE_NON_NEGATIVE(args);
     argChecks.POSITIVE_QUANTITY(args);
     argChecks.HAS_PAIR_ID(args);

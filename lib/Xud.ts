@@ -99,6 +99,7 @@ class Xud extends EventEmitter {
 
       this.service = new Service({
         version,
+        raidenDisabled: this.config.raiden.disable,
         orderBook: this.orderBook,
         swapClientManager: this.swapClientManager,
         pool: this.pool,
