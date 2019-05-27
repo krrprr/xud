@@ -4,7 +4,7 @@ import { LndInfo } from '../lndclient/types';
 import { RaidenInfo } from '../raidenclient/types';
 import { EventEmitter } from 'events';
 import errors from './errors';
-import { SwapClientType, OrderSide, SwapRole } from '../constants/enums';
+import { SwapClientType, OrderSide, SwapRole, RaidenTokens } from '../constants/enums';
 import { parseUri, toUri, UriParts } from '../utils/uriUtils';
 import { sortOrders } from '../utils/utils';
 import { Order, OrderPortion, PlaceOrderEvent } from '../orderbook/types';
@@ -40,6 +40,11 @@ type XudInfo = {
   raiden?: RaidenInfo;
 };
 
+const isRaidenToken = (pair: string) => {
+  const pairSplit = pair.toUpperCase().split('/');
+  return (pairSplit[0] in RaidenTokens) || (pairSplit[1] in RaidenTokens);
+};
+
 /** Functions to check argument validity and throw [[INVALID_ARGUMENT]] when invalid. */
 const argChecks = {
   HAS_HOST: ({ host }: { host: string }) => { if (host === '') throw errors.INVALID_ARGUMENT('host must be specified'); },
@@ -66,8 +71,8 @@ const argChecks = {
   VALID_SWAP_CLIENT: ({ swapClient }: { swapClient: number }) => {
     if (!SwapClientType[swapClient]) throw errors.INVALID_ARGUMENT('swap client is not recognized');
   },
-  WETH_DISABLED: ({ base, quote, isDisabled }: {base: string, quote: string, isDisabled: boolean }) => {
-    if ((base === 'WETH' || quote === 'WETH')  && isDisabled) throw errors.WETH_DISABLED();
+  RAIDEN_DISABLED: ({ pair, isDisabled }: {pair: string, isDisabled: boolean }) => {
+    if (isRaidenToken(pair) && isDisabled) throw errors.WETH_DISABLED();
   },
 };
 
@@ -340,12 +345,7 @@ class Service extends EventEmitter {
     callback?: (e: PlaceOrderEvent) => void,
   ) => {
     const { pairId, price, quantity, orderId, side } = args;
-    const pair = pairId.split('/');
-    argChecks.WETH_DISABLED({
-      base: pair[0],
-      quote: pair[1],
-      isDisabled: this.raidenDisabled},
-    );
+    argChecks.RAIDEN_DISABLED({ pair: pairId, isDisabled: this.raidenDisabled });
     argChecks.PRICE_NON_NEGATIVE(args);
     argChecks.POSITIVE_QUANTITY(args);
     argChecks.HAS_PAIR_ID(args);
