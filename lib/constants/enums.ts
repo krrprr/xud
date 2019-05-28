@@ -14,10 +14,6 @@ export enum OrderSide {
   Sell,
 }
 
-export enum RaidenTokens {
-  WETH = 'WETH',
-}
-
 export enum XuNetwork {
   // real coins.
   MainNet = 'mainnet',

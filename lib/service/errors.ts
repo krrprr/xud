@@ -4,7 +4,7 @@ const codesPrefix = errorCodesPrefix.SERVICE;
 const errorCodes = {
   INVALID_ARGUMENT: codesPrefix.concat('.1'),
   NOMATCHING_MODE_IS_REQUIRED: codesPrefix.concat('.2'),
-  WETH_DISABLED: codesPrefix.concat('.3'),
+  RAIDEN_DISABLED: codesPrefix.concat('.3'),
 };
 
 const errors = {
@@ -16,9 +16,9 @@ const errors = {
     message: 'nomatching mode is required',
     code: errorCodes.NOMATCHING_MODE_IS_REQUIRED,
   }),
-  WETH_DISABLED: () => ({
+  RAIDEN_DISABLED: () => ({
     message: 'raiden is disabled WETH orders cannot be placed',
-    code: errorCodes.WETH_DISABLED,
+    code: errorCodes.RAIDEN_DISABLED,
   }),
 };
 
