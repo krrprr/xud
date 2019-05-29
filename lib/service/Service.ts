@@ -18,7 +18,6 @@ import { errors as swapsErrors } from '../swaps/errors';
  * The components required by the API service layer.
  */
 type ServiceComponents = {
-  raidenDisabled: boolean;
   orderBook: OrderBook;
   swapClientManager: SwapClientManager;
   pool: Pool;
@@ -66,9 +65,6 @@ const argChecks = {
   VALID_SWAP_CLIENT: ({ swapClient }: { swapClient: number }) => {
     if (!SwapClientType[swapClient]) throw errors.INVALID_ARGUMENT('swap client is not recognized');
   },
-  RAIDEN_DISABLED: ({ isRaidenToken, isDisabled }: {isRaidenToken: boolean, isDisabled: boolean }) => {
-    if (isRaidenToken && isDisabled) throw errors.RAIDEN_DISABLED();
-  },
 };
 
 /** Class containing the available RPC methods for XUD */
@@ -79,7 +75,6 @@ class Service extends EventEmitter {
   private pool: Pool;
   private version: string;
   private swaps: Swaps;
-  private raidenDisabled: boolean;
 
   /** Create an instance of available RPC methods and bind all exposed functions. */
   constructor(components: ServiceComponents) {
@@ -91,21 +86,7 @@ class Service extends EventEmitter {
     this.pool = components.pool;
     this.swaps = components.swaps;
 
-    this.raidenDisabled = components.raidenDisabled;
     this.version = components.version;
-  }
-
-  private isRaidenToken = (pair: string): boolean => {
-    const pairSplit = pair.toUpperCase().split('/');
-    const base = this.swapClientManager.get(pairSplit[0]);
-    const quote =  this.swapClientManager.get(pairSplit[1]);
-    if (base && quote) {
-      return base.type === SwapClientType.Raiden && quote.type === SwapClientType.Raiden;
-    } else if (base) {
-      return base.type === SwapClientType.Raiden;
-    } else if (quote) {
-      return quote.type === SwapClientType.Raiden;
-    } else return false;
   }
 
   /** Adds a currency. */
@@ -353,10 +334,6 @@ class Service extends EventEmitter {
     callback?: (e: PlaceOrderEvent) => void,
   ) => {
     const { pairId, price, quantity, orderId, side } = args;
-    argChecks.RAIDEN_DISABLED({
-      isRaidenToken: this.isRaidenToken(pairId),
-      isDisabled: this.raidenDisabled,
-    });
     argChecks.PRICE_NON_NEGATIVE(args);
     argChecks.POSITIVE_QUANTITY(args);
     argChecks.HAS_PAIR_ID(args);

@@ -20,6 +20,7 @@ import { SwapSuccess, SwapDeal, SwapFailure } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
 // @ts-ignore
 import Bluebird from 'bluebird';
+import SwapClient from 'lib/swaps/SwapClient';
 
 interface OrderBook {
   /** Adds a listener to be called when a remote order was added. */
@@ -84,7 +85,7 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor(private logger: Logger, models: Models, public nomatching = false,
+  constructor(private logger: Logger, models: Models, private raidenDisabled: boolean, public nomatching = false,
     private pool?: Pool, private swaps?: Swaps, private nosanitychecks = false) {
     super();
 
@@ -193,6 +194,9 @@ class OrderBook extends EventEmitter {
     }
     return tp;
   }
+
+  // Check if client radian client
+  private isRaidenToken = (client: SwapClient): boolean => client.type === SwapClientType.Raiden;
 
   /**
    * Gets an own order by order id and pair id.
@@ -341,13 +345,21 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (!this.nosanitychecks && this.swaps) {
-      // check if sufficient outbound channel capacity exists
+    if (this.swaps) {
       const { outboundCurrency, outboundAmount } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
       const swapClient = this.swaps.swapClientManager.get(outboundCurrency);
+
+      // check if client exists
       if (!swapClient) {
         throw swapsErrors.SWAP_CLIENT_NOT_FOUND(outboundCurrency);
       }
+
+      // Check if client is supported
+      if (this.isRaidenToken(swapClient) && this.raidenDisabled) {
+        throw swapsErrors.SWAP_CLIENT_RAIDEN_DISABLED(outboundCurrency);
+      }
+
+      // check if sufficient outbound channel capacity exists
       if (outboundAmount > swapClient.maximumOutboundCapacity) {
         throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, swapClient.maximumOutboundCapacity);
       }

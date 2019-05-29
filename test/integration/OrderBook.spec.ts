@@ -62,7 +62,7 @@ describe('OrderBook', () => {
       }
       return client;
     };
-    orderBook = new OrderBook(loggers.orderbook, db.models, false, pool, swaps);
+    orderBook = new OrderBook(loggers.orderbook, db.models, false, false, pool, swaps);
     await orderBook.init();
   });
 
