@@ -80,8 +80,7 @@ class Xud extends EventEmitter {
       this.swaps = new Swaps(loggers.swaps, this.db.models, this.pool, this.swapClientManager);
       initPromises.push(this.swaps.init());
 
-      this.orderBook = new OrderBook(loggers.orderbook, this.db.models,
-        this.config.raiden.disable, this.config.nomatching, this.pool, this.swaps, this.config.nosanitychecks);
+      this.orderBook = new OrderBook(loggers.orderbook, this.db.models, this.config.nomatching, this.pool, this.swaps, this.config.nosanitychecks);
 
       initPromises.push(this.orderBook.init());
 
