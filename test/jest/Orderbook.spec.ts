@@ -39,11 +39,6 @@ jest.mock('../../lib/db/DB', () => {
   });
 });
 
-const limits: Limits = {
-  lnd: 0.04 ,
-  raiden: 1,
-};
-
 const mockSendPacket = jest.fn();
 const mockAddPair = jest.fn();
 jest.mock('../../lib/p2p/Peer', () => {
@@ -105,7 +100,7 @@ describe('OrderBook', () => {
 
   test('nosanitychecks enabled adds pairs and requests orders', async () => {
     config.nosanitychecks = true;
-    orderbook = new Orderbook(loggers.orderbook, db.models, limits, config.nomatching, pool, swaps, config.nosanitychecks);
+    orderbook = new Orderbook(loggers.orderbook, db.models, config.limits, config.nomatching, pool, swaps, config.nosanitychecks);
     await orderbook.init();
     const pairIds = ['LTC/BTC', 'WETH/BTC'];
     await orderbook['verifyPeerPairs'](peer, pairIds);
@@ -115,7 +110,7 @@ describe('OrderBook', () => {
 
   test('placeOrder insufficient outbound balance does throw when nosanitychecks disabled', async () => {
     config.nosanitychecks = false;
-    orderbook = new Orderbook(loggers.orderbook, db.models, limits, config.nomatching, pool, swaps, config.nosanitychecks);
+    orderbook = new Orderbook(loggers.orderbook, db.models, config.limits, config.nomatching, pool, swaps, config.nosanitychecks);
     await orderbook.init();
     const quantity = 500000000000;
     const order: OwnOrder = {
