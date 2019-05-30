@@ -1,7 +1,7 @@
 import Pool from '../../lib/p2p/Pool';
 import Peer from '../../lib/p2p/Peer';
 import Orderbook from '../../lib/orderbook/OrderBook';
-import { OwnOrder, Limits } from '../../lib/orderbook/types';
+import { OwnOrder } from '../../lib/orderbook/types';
 import Logger from '../../lib/Logger';
 import Config from '../../lib/Config';
 import DB from '../../lib/db/DB';
