@@ -14,7 +14,7 @@ import Swaps from '../swaps/Swaps';
 import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType } from '../constants/enums';
 import { CurrencyInstance, PairInstance, CurrencyFactory } from '../db/types';
 import { Pair, OrderIdentifier, OwnOrder, OrderPortion, OwnLimitOrder, PeerOrder, Order, PlaceOrderEvent,
-  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder } from './types';
+  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder, Limits } from './types';
 import { SwapRequestPacket, SwapFailedPacket, GetOrdersPacket } from '../p2p/packets';
 import { SwapSuccess, SwapDeal, SwapFailure } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
@@ -84,7 +84,7 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor(private logger: Logger, models: Models, public nomatching = false,
+  constructor(private logger: Logger, models: Models, private limits: Limits, public nomatching = false,
     private pool?: Pool, private swaps?: Swaps, private nosanitychecks = false) {
     super();
 
@@ -341,6 +341,7 @@ class OrderBook extends EventEmitter {
       };
     }
 
+    // Sanity checks
     if (!this.nosanitychecks && this.swaps) {
       // check if sufficient outbound channel capacity exists
       const { outboundCurrency, outboundAmount } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
@@ -351,6 +352,14 @@ class OrderBook extends EventEmitter {
       if (outboundAmount > swapClient.maximumOutboundCapacity) {
         throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, swapClient.maximumOutboundCapacity);
       }
+
+      // Check if order abides to limits
+      if (swapClient.type === SwapClientType.Lnd && outboundAmount > this.limits.lnd
+        || swapClient.type === SwapClientType.Raiden && outboundAmount > this.limits.raiden) {
+        const limit = swapClient.type === SwapClientType.Lnd ? this.limits.lnd : this.limits.raiden;
+        throw errors.EXCEEDING_LIMIT(swapClient.type, outboundAmount, limit);
+      }
+
     }
 
     // perform matching routine. maker orders that are matched will be removed from the order book.

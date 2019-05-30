@@ -1,4 +1,5 @@
 import errorCodesPrefix from '../constants/errorCodesPrefix';
+import { SwapClientType } from '../constants/enums';
 
 const codesPrefix = errorCodesPrefix.ORDERBOOK;
 const errorCodes = {
@@ -14,6 +15,7 @@ const errorCodes = {
   QUANTITY_DOES_NOT_MATCH: codesPrefix.concat('.10'),
   CURRENCY_MISSING_ETHEREUM_CONTRACT_ADDRESS: codesPrefix.concat('.11'),
   INSUFFICIENT_OUTBOUND_BALANCE: codesPrefix.concat('.12'),
+  EXCEEDING_LIMIT: codesPrefix.concat('.13'),
 };
 
 const errors = {
@@ -64,6 +66,10 @@ const errors = {
   INSUFFICIENT_OUTBOUND_BALANCE: (currency: string, amount: number, availableAmount: number) => ({
     message: `${currency} outbound balance of ${availableAmount} is not sufficient for order amount of ${amount}`,
     code: errorCodes.INSUFFICIENT_OUTBOUND_BALANCE,
+  }),
+  EXCEEDING_LIMIT: (client: SwapClientType, amount: number, limit: number) => ({
+    message: `outbound amount: ${amount} is exceeding limit of: ${limit} set for ${client === SwapClientType.Lnd ? 'LND' : 'RAIDEN'} client`,
+    code: errorCodes.EXCEEDING_LIMIT,
   }),
 };
 

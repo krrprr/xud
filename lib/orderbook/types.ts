@@ -1,6 +1,11 @@
 import { SwapClientType } from '../constants/enums';
 import { SwapSuccess, SwapFailure } from '../swaps/types';
 
+export type Limits = {
+  lnd: number;
+  raiden: number;
+};
+
 export type OrderMatch = {
   maker: Order;
   taker: OwnOrder;
