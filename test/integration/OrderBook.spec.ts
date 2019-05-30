@@ -14,6 +14,11 @@ import { SwapClientType } from '../../lib/constants/enums';
 import { createOwnOrder } from '../utils';
 import sinon, { SinonSandbox }  from 'sinon';
 
+const limits: orders.Limits = {
+  lnd: 0.04 ,
+  raiden: 1,
+};
+
 const PAIR_ID = 'LTC/BTC';
 const currencies = PAIR_ID.split('/');
 const loggers = Logger.createLoggers(Level.Warn);
@@ -62,7 +67,7 @@ describe('OrderBook', () => {
       }
       return client;
     };
-    orderBook = new OrderBook(loggers.orderbook, db.models, false, pool, swaps);
+    orderBook = new OrderBook(loggers.orderbook, db.models, limits, false, pool, swaps);
     await orderBook.init();
   });
 
@@ -162,7 +167,7 @@ describe('nomatching OrderBook', () => {
   });
 
   beforeEach(async () => {
-    orderBook = new OrderBook(loggers.orderbook, db.models, true);
+    orderBook = new OrderBook(loggers.orderbook, db.models, limits, true);
     await orderBook.init();
   });
 
