@@ -360,7 +360,7 @@ class OrderBook extends EventEmitter {
       }
 
       // check if sufficient outbound channel capacity exists
-      if (outboundAmount > swapClient.maximumOutboundCapacity) {
+      if (outboundAmount > swapClient.maximumOutboundCapacity && !this.nosanitychecks) {
         throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, swapClient.maximumOutboundCapacity);
       }
     }
