@@ -13,6 +13,7 @@ import { SwapDeal, SwapSuccess, SanitySwap, ResolveRequest } from './types';
 import { generatePreimageAndHash, setTimeoutPromise } from '../utils/utils';
 import { PacketType } from '../p2p/packets';
 import SwapClientManager from './SwapClientManager';
+import { errors } from './errors';
 
 type OrderToAccept = Pick<SwapDeal, 'quantity' | 'price' | 'localId' | 'isBuy'> & {
   quantity: number;
@@ -174,7 +175,10 @@ class Swaps extends EventEmitter {
   /**
    * Sends an error to peer. Sets reqId if packet is a response to a request.
    */
-  private sendErrorToPeer = async (peer: Peer, rHash: string, failureReason: SwapFailureReason, errorMessage?: string, reqId?: string) => {
+  private sendErrorToPeer = async (
+    { peer, rHash, failureReason = SwapFailureReason.UnknownError, errorMessage, reqId }:
+    { peer: Peer, rHash: string, failureReason?: SwapFailureReason, errorMessage?: string, reqId?: string },
+  ) => {
     const errorBody: packets.SwapFailedPacketBody = {
       rHash,
       failureReason,
@@ -403,7 +407,12 @@ class Swaps extends EventEmitter {
 
     const rHash = requestPacket.body!.rHash;
     if (this.usedHashes.has(rHash)) {
-      await this.sendErrorToPeer(peer, requestPacket.body!.rHash, SwapFailureReason.PaymentHashReuse, undefined, requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.PaymentHashReuse,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
     const requestBody = requestPacket.body!;
@@ -414,7 +423,13 @@ class Swaps extends EventEmitter {
 
     const takerSwapClient = this.swapClientManager.get(takerCurrency);
     if (!takerSwapClient) {
-      await this.sendErrorToPeer(peer, rHash, SwapFailureReason.SwapClientNotSetup, 'Unsupported taker currency', requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.SwapClientNotSetup,
+        errorMessage: 'Unsupported taker currency',
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
@@ -435,7 +450,6 @@ class Swaps extends EventEmitter {
       localId: orderToAccept.localId,
       phase: SwapPhase.SwapCreated,
       state: SwapState.Active,
-      rHash: requestBody.rHash,
       role: SwapRole.Maker,
       createTime: Date.now(),
     };
@@ -448,7 +462,13 @@ class Swaps extends EventEmitter {
     // Make sure we are connected to lnd for both currencies
     if (!this.isPairSupported(deal.pairId)) {
       this.failDeal(deal, SwapFailureReason.SwapClientNotSetup);
-      await this.sendErrorToPeer(peer, deal.rHash, deal.failureReason!, deal.errorMessage, requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
@@ -456,13 +476,25 @@ class Swaps extends EventEmitter {
       deal.makerToTakerRoutes = await takerSwapClient.getRoutes(takerAmount, takerPubKey);
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, err.message);
-      await this.sendErrorToPeer(peer, deal.rHash, deal.failureReason!, deal.errorMessage, requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
     if (deal.makerToTakerRoutes.length === 0) {
       this.failDeal(deal, SwapFailureReason.NoRouteFound, 'Unable to find route to destination');
-      await this.sendErrorToPeer(peer, deal.rHash, deal.failureReason!, deal.errorMessage, requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
@@ -471,7 +503,13 @@ class Swaps extends EventEmitter {
       height = await takerSwapClient.getHeight();
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, `Unable to fetch block height: ${err.message}`);
-      await this.sendErrorToPeer(peer, deal.rHash, deal.failureReason!, deal.errorMessage, requestPacket.header.id);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
@@ -565,7 +603,12 @@ class Swaps extends EventEmitter {
       await takerSwapClient.addInvoice(deal.rHash, deal.takerAmount);
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, err.message);
-      await this.sendErrorToPeer(peer, rHash, err.message);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.UnexpectedClientError,
+        errorMessage: err.message,
+      });
       return;
     }
 
@@ -582,7 +625,12 @@ class Swaps extends EventEmitter {
       await peer.sendPacket(new packets.SwapCompletePacket(responseBody));
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.SendPaymentFailure, err.message);
-      await this.sendErrorToPeer(peer, rHash, err.message);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.SendPaymentFailure,
+        errorMessage: err.message,
+      });
     }
   }
 
@@ -660,7 +708,7 @@ class Swaps extends EventEmitter {
         }
       }
     } else {
-      throw new Error('unknown payment hash');
+      throw errors.PAYMENT_HASH_NOT_FOUND(rHash);
     }
   }
 
@@ -679,7 +727,7 @@ class Swaps extends EventEmitter {
         // if we don't have a deal for this hash, but its amount is exactly 1 satoshi, try to resolve it as a sanity swap
         return this.resolveSanitySwap(rHash, amount, htlcCurrency);
       } else {
-        throw new Error(`Something went wrong. Can't find deal: ${rHash}`);
+        throw errors.PAYMENT_HASH_NOT_FOUND(rHash);
       }
     }
 

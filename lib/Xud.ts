@@ -73,14 +73,21 @@ class Xud extends EventEmitter {
 
       this.db = new DB(loggers.db, this.config.dbpath);
       await this.db.init(this.config.network, this.config.initdb);
-      this.pool = new Pool(this.config.p2p, this.config.network, loggers.p2p, this.db.models);
+      this.pool = new Pool(this.config.p2p, this.config.network, loggers.p2p, this.db.models, version);
       this.swapClientManager = new SwapClientManager(this.config, loggers, this.pool);
       await this.swapClientManager.init(this.db.models);
 
       this.swaps = new Swaps(loggers.swaps, this.db.models, this.pool, this.swapClientManager);
       initPromises.push(this.swaps.init());
 
-      this.orderBook = new OrderBook(loggers.orderbook, this.db.models, this.config.nomatching, this.pool, this.swaps, this.config.nosanitychecks);
+      this.orderBook = new OrderBook({
+        logger: loggers.orderbook,
+        models: this.db.models,
+        nomatching: this.config.nomatching,
+        pool: this.pool,
+        swaps: this.swaps,
+        nosanitychecks: this.config.nosanitychecks,
+      });
       initPromises.push(this.orderBook.init());
 
       // wait for components to initialize in parallel
@@ -89,13 +96,7 @@ class Xud extends EventEmitter {
       this.logger.info(`Local nodePubKey is ${this.nodeKey.nodePubKey}`);
 
       // initialize pool and start listening/connecting only once other components are initialized
-      await this.pool.init({
-        version,
-        lndPubKeys: this.swapClientManager.getLndPubKeys(),
-        pairs: this.orderBook.pairIds,
-        nodePubKey: this.nodeKey.nodePubKey,
-        raidenAddress: this.swapClientManager.raidenClient.address,
-      }, this.nodeKey);
+      await this.pool.init(this.nodeKey);
 
       this.service = new Service({
         version,

@@ -38,19 +38,22 @@ jest.mock('../../lib/db/DB', () => {
     };
   });
 });
-const mockSendPacket = jest.fn();
-const mockAddPair = jest.fn();
+const mockActivatePair = jest.fn();
 jest.mock('../../lib/p2p/Peer', () => {
   return jest.fn().mockImplementation(() => {
     return {
-      activePairs: {
-        add: mockAddPair,
-      },
-      sendPacket: mockSendPacket,
+      activatePair: mockActivatePair,
     };
   });
 });
-jest.mock('../../lib/p2p/Pool');
+jest.mock('../../lib/p2p/Pool', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      updatePairs: jest.fn(),
+      on: jest.fn(),
+    };
+  });
+});
 jest.mock('../../lib/Config');
 jest.mock('../../lib/swaps/Swaps');
 jest.mock('../../lib/swaps/SwapClientManager');
@@ -87,7 +90,7 @@ describe('OrderBook', () => {
       port: 9735,
     }, network);
     db = new DB(loggers.db, config.dbpath);
-    pool = new Pool(config.p2p, config.network, loggers.p2p, db.models);
+    pool = new Pool(config.p2p, config.network, loggers.p2p, db.models, '1.0.0');
     swapClientManager = new SwapClientManager(config, loggers, pool);
     swaps = new Swaps(loggers.swaps, db.models, pool, swapClientManager);
     swaps.swapClientManager = swapClientManager;
@@ -99,17 +102,30 @@ describe('OrderBook', () => {
 
   test('nosanitychecks enabled adds pairs and requests orders', async () => {
     config.nosanitychecks = true;
-    orderbook = new Orderbook(loggers.orderbook, db.models, config.nomatching, pool, swaps, config.nosanitychecks);
+    orderbook = new Orderbook({
+      pool,
+      swaps,
+      logger: loggers.orderbook,
+      models: db.models,
+      nomatching: config.nomatching,
+      nosanitychecks: config.nosanitychecks,
+    });
     await orderbook.init();
     const pairIds = ['LTC/BTC', 'WETH/BTC'];
     await orderbook['verifyPeerPairs'](peer, pairIds);
-    expect(mockAddPair).toHaveBeenCalledTimes(2);
-    expect(mockSendPacket).toHaveBeenCalledTimes(1);
+    expect(mockActivatePair).toHaveBeenCalledTimes(2);
   });
 
   test('placeOrder insufficient outbound balance does throw when nosanitychecks disabled', async () => {
     config.nosanitychecks = false;
-    orderbook = new Orderbook(loggers.orderbook, db.models, config.nomatching, pool, swaps, config.nosanitychecks);
+    orderbook = new Orderbook({
+      pool,
+      swaps,
+      logger: loggers.orderbook,
+      models: db.models,
+      nomatching: config.nomatching,
+      nosanitychecks: config.nosanitychecks,
+    });
     await orderbook.init();
     const quantity = 500000000000;
     const order: OwnOrder = {
