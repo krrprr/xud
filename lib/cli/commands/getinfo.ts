@@ -2,7 +2,7 @@ import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
 import Table, { VerticalTable } from 'cli-table3';
 import colors from 'colors/safe';
-import { GetInfoRequest, GetInfoResponse, LndInfo, LndChannels } from '../../proto/xudrpc_pb';
+import { GetInfoRequest, GetInfoResponse, LndInfo } from '../../proto/xudrpc_pb';
 
 type generalInfo = {
   version: string;
@@ -22,7 +22,7 @@ const displayChannels = (channels: any, asset: string) => {
   console.log(table.toString(), '\n');
 };
 
-const displayChainsList = (list: string[], asset: string) => {
+const displayChainsList = (list: any[], asset: string) => {
   const table = new Table() as VerticalTable;
   list.forEach((asset, i) => {
     table.push({ [colors.blue(`${i + 1}.`)] : asset });

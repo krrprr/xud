@@ -33,5 +33,5 @@ export const handler = (argv: Arguments) => {
   if (argv.quantity) {
     request.setQuantity(argv.quantity * SATOSHIS_PER_COIN);
   }
-  loadXudClient(argv).removeOrder(request, callback(argv));
+  loadXudClient(argv).removeOrder(request, callback(argv, displayRemoveOrder));
 };
