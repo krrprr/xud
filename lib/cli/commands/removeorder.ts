@@ -7,7 +7,7 @@ import colors from 'colors/safe';
 
 const displayRemoveOrder = (res: RemoveOrderResponse.AsObject) => {
   const table = new Table() as VerticalTable;
-  const quantityOnHold = colors.red('Quantity on hold');
+  const quantityOnHold = colors.blue('Quantity on hold');
   table.push({ [quantityOnHold]: res.quantityOnHold });
   console.log(colors.underline(colors.bold('\nOrder removed:')));
   console.log(table.toString());

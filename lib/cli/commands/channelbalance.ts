@@ -5,9 +5,9 @@ import colors from 'colors/safe';
 import { ChannelBalanceRequest, ChannelBalanceResponse } from '../../proto/xudrpc_pb';
 
 const HEADERS = [
-  colors.red('Ticker'),
-  colors.red('balance'),
-  colors.red('Pending open balance'),
+  colors.blue('Ticker'),
+  colors.blue('Balance'),
+  colors.blue('Pending Balance'),
 ];
 
 const formatChannels = (channels: ChannelBalanceResponse.AsObject) => {

@@ -6,8 +6,8 @@ import { GetNodeInfoRequest, GetNodeInfoResponse } from '../../proto/xudrpc_pb';
 
 const displayNodeInfo = (node: GetNodeInfoResponse.AsObject) => {
   const table = new Table() as VerticalTable;
-  const bannedTitle = colors.red('Banned');
-  const reputationScore = colors.red('Reputation Score');
+  const bannedTitle = colors.blue('Banned');
+  const reputationScore = colors.blue('Reputation Score');
   table.push(
     { [bannedTitle]: node.banned }
   , { [reputationScore]: node.reputationscore });

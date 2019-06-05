@@ -15,7 +15,7 @@ const displayChannels = (channels: any, asset: string) => {
   const table = new Table() as VerticalTable;
   Object.keys(channels).forEach((key: any) => {
     table.push({
-      [colors.red(key)] : channels[key],
+      [colors.blue(key)] : channels[key],
     });
   });
   console.log(colors.underline(colors.bold(`\nLnd ${asset} channels:`)));
@@ -25,7 +25,7 @@ const displayChannels = (channels: any, asset: string) => {
 const displayChainsList = (list: string[], asset: string) => {
   const table = new Table() as VerticalTable;
   list.forEach((asset, i) => {
-    table.push({ [colors.red(`${i + 1}.`)] : asset });
+    table.push({ [colors.blue(`${i + 1}.`)] : asset });
   });
   console.log(colors.underline(colors.bold(`\nLnd ${asset} chains:`)));
   console.log(table.toString(), '\n');
@@ -41,10 +41,10 @@ const displayUriList = (uris: string[], asset: string) => {
 const displayLndInfo = (asset: string, info: LndInfo.AsObject) => {
   const basicInfotable = new Table() as VerticalTable;
   basicInfotable.push(
-    { [colors.red('Error')]: info.error },
-    { [colors.red('Block Height')]: info.blockheight },
-    { [colors.red('Version')]: info.version },
-    { [colors.red('Alias')]: info.alias },
+    { [colors.blue('Error')]: info.error },
+    { [colors.blue('Block Height')]: info.blockheight },
+    { [colors.blue('Version')]: info.version },
+    { [colors.blue('Alias')]: info.alias },
   );
   console.log(colors.underline(colors.bold(`\nLnd ${asset} info:`)));
   console.log(basicInfotable.toString(), '\n');
@@ -63,10 +63,10 @@ const displayLndInfo = (asset: string, info: LndInfo.AsObject) => {
 const displayGeneral = (info: generalInfo) => {
   const table = new Table() as VerticalTable;
   table.push(
-    { [colors.red('Version')]: info.version },
-    { [colors.red('Pairs')]: info.numPairs },
-    { [colors.red('Peers')]: info.numPeers },
-    { [colors.red('Pubic key')]: info.nodePubKey },
+    { [colors.blue('Version')]: info.version },
+    { [colors.blue('Pairs')]: info.numPairs },
+    { [colors.blue('Peers')]: info.numPeers },
+    { [colors.blue('Pubic key')]: info.nodePubKey },
   );
   console.log(colors.underline(colors.bold(`\nGeneral XUD Info`)));
   console.log(table.toString(), '\n');
@@ -75,8 +75,8 @@ const displayGeneral = (info: generalInfo) => {
 const displayOrders = (orders: {own: number, peer: number}) => {
   const table = new Table() as VerticalTable;
   table.push(
-    { [colors.red('Own orders')]: orders.own },
-    { [colors.red('Peer orders')]: orders.peer },
+    { [colors.blue('Own orders')]: orders.own },
+    { [colors.blue('Peer orders')]: orders.peer },
   );
   console.log(colors.underline(colors.bold('\nOrders:')));
   console.log(table.toString(), '\n');
