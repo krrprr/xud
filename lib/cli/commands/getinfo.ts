@@ -68,7 +68,7 @@ const displayGeneral = (info: generalInfo) => {
     { [colors.blue('Peers')]: info.numPeers },
     { [colors.blue('Pubic key')]: info.nodePubKey },
   );
-  console.log(colors.underline(colors.bold(`\nGeneral XUD Info`)));
+  console.log(colors.underline(colors.bold('\nGeneral XUD Info')));
   console.log(table.toString(), '\n');
 };
 
