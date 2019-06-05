@@ -7,8 +7,8 @@ import { ListPeersRequest, ListPeersResponse, Peer } from '../../proto/xudrpc_pb
 
 const HEADERS = [
   'address',
-  'public key',
-  'pairs list',
+  'node key',
+  'pairs',
   'details',
 ];
 
@@ -23,7 +23,7 @@ const trimPubKey = (key: string) => {
   if (key.length <= 0) {
     return '';
   }
-  return `${key.slice(0, 6)}...`;
+  return `${key.slice(0, 10)}...`;
 };
 
 const formatPairList = (pairs: string[]) => {
