@@ -1,4 +1,9 @@
-import { SwapRole, SwapPhase, SwapState, SwapFailureReason } from '../constants/enums';
+import {
+  SwapRole,
+  SwapPhase,
+  SwapState,
+  SwapFailureReason,
+} from '../constants/enums';
 
 export type SwapDeal = {
   /** Our role in the swap. */
@@ -84,4 +89,10 @@ export type Route = {
 export type SanitySwap =  Pick<SwapDeal, 'rHash' | 'rPreimage' | 'peerPubKey'> & {
   /** The currency for the swap. */
   currency: string;
+};
+
+export type ResolveRequest = {
+  /** The amount of the incoming payment pending resolution, in the smallest units supported by the token. */
+  amount: number,
+  rHash: string,
 };

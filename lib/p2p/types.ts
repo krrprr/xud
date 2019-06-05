@@ -15,6 +15,7 @@ export type NodeConnectionInfo = {
 export type NodeState = {
   version: string;
   nodePubKey: string;
+  /** This node's listening external socket addresses to advertise to peers. */
   addresses: Address[];
   pairs: string[];
   raidenAddress: string;
@@ -27,10 +28,13 @@ export type PoolConfig = {
   /** Whether or not to automatically detect and share current external ip address on startup. */
   detectexternalip: boolean;
 
-  /** If false, don't send GET_NODES when connecting, defaults to true. */
+  /** Whether to send a GetNodes packet to discover new nodes upon connecting to peers, defaults to true. */
   discover: boolean;
 
-  /** GET_NODES scheduler in minutes, discover option should be true. */
+  /**
+   * Time interval between sending GetNodes packets to already connected peers. Measured in
+   * minutes, only applies if discover option is true.
+   */
   discoverminutes: number;
 
   /** Whether or not to listen for incoming connections from peers. */

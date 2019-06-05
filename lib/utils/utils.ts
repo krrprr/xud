@@ -1,7 +1,7 @@
 import http from 'http';
 import p2pErrors from '../p2p/errors';
 import { Pair, Order } from '../orderbook/types';
-import crypto, { createHash } from 'crypto';
+import { createHash, randomBytes as cryptoRandomBytes } from 'crypto';
 import { promisify } from 'util';
 import moment from 'moment';
 
@@ -147,7 +147,7 @@ export const isPlainObject = (obj: any) => {
 export const setTimeoutPromise = promisify(setTimeout);
 
 /** A promisified wrapper for the NodeJS `crypto.randomBytes` method. */
-export const randomBytes = promisify(crypto.randomBytes);
+export const randomBytes = promisify(cryptoRandomBytes);
 
 export const removeUndefinedProps = (obj: any) => {
   Object.keys(obj).forEach((key) => {
@@ -198,4 +198,12 @@ export const generatePreimageAndHash = async () => {
   const rPreimage = bytes.toString('hex');
   const rHash = createHash('sha256').update(bytes).digest('hex');
   return { rPreimage, rHash };
+};
+
+export const base64ToHex = (b64: string) => {
+  return Buffer.from(b64, 'base64').toString('hex');
+};
+
+export const hexToUint8Array = (hex: string) => {
+  return Uint8Array.from(Buffer.from(hex, 'hex'));
 };

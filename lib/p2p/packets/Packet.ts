@@ -1,5 +1,5 @@
 import PacketType from './PacketType';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import uuidv1 from 'uuid/v1';
 import stringify from 'json-stable-stringify';
 
@@ -42,6 +42,12 @@ function isPacketTypeArray(val: any): val is PacketType[] {
   return val !== undefined && val instanceof Array && val.every(v => isPacketType(v));
 }
 
+/**
+ * Represents a packet of data that can be transmitted as part of the p2p xud protocol. Packets
+ * are serialized using protobuf, optionally encrypted, and transmitted to peers. Each packet
+ * represents a discrete chunk of information that either sends data to or requests data from a
+ * peer.
+ */
 abstract class Packet<T = any> implements PacketInterface {
   public abstract get type(): PacketType;
   public abstract get direction(): PacketDirection;
@@ -101,8 +107,7 @@ abstract class Packet<T = any> implements PacketInterface {
    * Calculating the packet checksum using its JSON representation hash first 4 bytes.
    */
   public checksum = (): number => {
-    return crypto
-      .createHash('sha256')
+    return createHash('sha256')
       .update(this.toJSON())
       .digest()
       .readUInt32LE(0, true);
