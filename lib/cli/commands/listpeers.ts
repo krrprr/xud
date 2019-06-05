@@ -37,7 +37,7 @@ const formatPairList = (pairs: string[]) => {
 const formatLndPubKeys = (lndKeys: string[][]) => {
   let str = '';
   lndKeys.forEach((client) => {
-    str =  str + `${client[0]} ${trimPubKey(client[1])}`;
+    str =  str + `\n${client[0]} ${trimPubKey(client[1])}`;
   });
   return str;
 };
@@ -49,8 +49,11 @@ const formatPeers = (peers: ListPeersResponse.AsObject) => {
       peer.address,
       trimPubKey(peer.nodePubKey),
       formatPairList(peer.pairsList),
-      // tslint:disable-next-line:max-line-length
-      `inbound: ${peer.inbound}\nversion: ${peer.xudVersion}\ntime connected: ${peer.secondsConnected.toString()} seconds\nlnd keys: ${formatLndPubKeys(peer.lndPubKeysMap)}\nraiden address: ${trimPubKey(peer.raidenAddress)}`,
+      `inbound:\n ${peer.inbound}`,
+      `version:\n ${peer.xudVersion}`,
+      `time connected:\n ${peer.secondsConnected.toString()} seconds`,
+      `lnd keys: ${formatLndPubKeys(peer.lndPubKeysMap)}`,
+      `raiden address:\n ${trimPubKey(peer.raidenAddress)}`,
     ]);
   });
   return formattedPeers;
