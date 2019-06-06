@@ -233,23 +233,26 @@ class LndClient extends SwapClient {
     console.log('1 sec passed, proceeding sendPayment');
 
     if (deal.makerToTakerRoutes && deal.role === SwapRole.Maker) {
-      const request = new lndrpc.SendToRouteRequest();
-      request.setRoutesList(deal.makerToTakerRoutes as lndrpc.Route[]);
-      request.setPaymentHashString(deal.rHash);
-
+      if (!deal.destination) {
+        throw new Error('no destination, should not happen!');
+      }
+      const sendRequest = new lndrpc.SendRequest();
+      sendRequest.setAmt(1);
+      sendRequest.setDestString(deal.destination);
+      sendRequest.setPaymentHashString(deal.rHash);
+      sendRequest.setFinalCltvDelta(this.cltvDelta);
+      let sendPaymentResponse: lndrpc.SendResponse;
       try {
-        const sendToRouteResponse = await this.sendToRouteSync(request);
-        const sendPaymentError = sendToRouteResponse.getPaymentError();
-        if (sendPaymentError) {
-          this.logger.error(`sendToRouteSync failed with payment error: ${sendPaymentError}`);
-          throw new Error(sendPaymentError);
-        }
-
-        return base64ToHex(sendToRouteResponse.getPaymentPreimage_asB64());
+        sendPaymentResponse = await this.sendPaymentSync(sendRequest);
       } catch (err) {
-        this.logger.error(`got exception from sendToRouteSync: ${JSON.stringify(request.toObject())}`, err);
+        this.logger.error('got exception from sendPaymentSync', err.message);
         throw err;
       }
+      const paymentError = sendPaymentResponse.getPaymentError();
+      if (paymentError) {
+        throw new Error(paymentError);
+      }
+      return base64ToHex(sendPaymentResponse.getPaymentPreimage_asB64());
     } else if (deal.destination) {
       const request = new lndrpc.SendRequest();
       request.setDestString(deal.destination);
@@ -384,9 +387,11 @@ class LndClient extends SwapClient {
   /**
    * Sends amount to destination using pre-defined routes.
    */
+    /*
   private sendToRouteSync = (request: lndrpc.SendToRouteRequest): Promise<lndrpc.SendResponse> => {
     return this.unaryCall<lndrpc.SendToRouteRequest, lndrpc.SendResponse>('sendToRouteSync', request);
   }
+    */
 
   public addInvoice = async (rHash: string, amount: number) => {
     const addHoldInvoiceRequest = new lndinvoices.AddHoldInvoiceRequest();

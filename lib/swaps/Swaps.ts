@@ -234,6 +234,7 @@ class Swaps extends EventEmitter {
     const swapClient = this.swapClientManager.get(makerCurrency)!;
 
     const peer = this.pool.getPeer(maker.peerPubKey);
+    console.log('VERIFY EXECUTION');
     const destination = peer.getIdentifier(swapClient.type, makerCurrency);
     if (!destination) {
       throw SwapFailureReason.SwapClientNotSetup;
