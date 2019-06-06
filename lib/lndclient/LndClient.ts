@@ -223,6 +223,15 @@ class LndClient extends SwapClient {
   public sendPayment = async (deal: SwapDeal): Promise<string> => {
     assert(deal.state === SwapState.Active);
 
+    console.log('sleeping before sending!');
+    const waitFor1Sec = () => {
+      return new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
+    };
+    await waitFor1Sec();
+    console.log('1 sec passed, proceeding sendPayment');
+
     if (deal.makerToTakerRoutes && deal.role === SwapRole.Maker) {
       const request = new lndrpc.SendToRouteRequest();
       request.setRoutesList(deal.makerToTakerRoutes as lndrpc.Route[]);
