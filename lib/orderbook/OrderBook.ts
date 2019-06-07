@@ -364,7 +364,7 @@ class OrderBook extends EventEmitter {
 
       const outboundSwapClient = this.swaps.swapClientManager.get(outboundCurrency);
       const inboundSwapClient = this.swaps.swapClientManager.get(inboundCurrency);
-      
+
       // check if clients exists
       if (!outboundSwapClient) {
         throw swapsErrors.SWAP_CLIENT_NOT_FOUND(outboundCurrency);
