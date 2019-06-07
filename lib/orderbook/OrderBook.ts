@@ -296,6 +296,7 @@ class OrderBook extends EventEmitter {
 
   public placeLimitOrder = async (order: OwnLimitOrder, onUpdate?: (e: PlaceOrderEvent) => void): Promise<PlaceOrderResult> => {
     const stampedOrder = this.stampOwnOrder(order);
+
     if (this.nomatching) {
       this.addOwnOrder(stampedOrder);
       onUpdate && onUpdate({ type: PlaceOrderEventType.RemainingOrder, payload: stampedOrder });
@@ -354,7 +355,7 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (this.swaps) {
+    if (this.swaps && !this.nosanitychecks) {
       const {
         outboundCurrency,
         inboundCurrency,
@@ -363,7 +364,7 @@ class OrderBook extends EventEmitter {
 
       const outboundSwapClient = this.swaps.swapClientManager.get(outboundCurrency);
       const inboundSwapClient = this.swaps.swapClientManager.get(inboundCurrency);
-
+      
       // check if clients exists
       if (!outboundSwapClient) {
         throw swapsErrors.SWAP_CLIENT_NOT_FOUND(outboundCurrency);
