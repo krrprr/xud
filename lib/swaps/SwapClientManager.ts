@@ -1,15 +1,33 @@
 import Config from '../Config';
 import SwapClient from './SwapClient';
 import LndClient from '../lndclient/LndClient';
-import { LndLogger, LndPubKeys, LndInfos } from '../lndclient/types';
+import { LndLogger, LndInfos } from '../lndclient/types';
 import RaidenClient from '../raidenclient/RaidenClient';
 import Logger, { Loggers } from '../Logger';
-import Pool from '../p2p/Pool';
 import { errors } from './errors';
 import { Currency } from '../orderbook/types';
-import { isLndClient, isRaidenClient } from './types';
+import { Models } from '../db/DB';
+import { SwapClientType } from '../constants/enums';
+import { EventEmitter } from 'events';
 
-class SwapClientManager {
+function isRaidenClient(swapClient: SwapClient): swapClient is RaidenClient {
+  return (swapClient.type === SwapClientType.Raiden);
+}
+
+function isLndClient(swapClient: SwapClient): swapClient is LndClient {
+  return (swapClient.type === SwapClientType.Lnd);
+}
+
+interface SwapClientManager {
+  on(event: 'lndUpdate', listener: (currency: string, newPubKey: string) => void): this;
+  on(event: 'raidenUpdate', listener: (newAddress: string) => void): this;
+  on(event: 'htlcAccepted', listener: (swapClient: SwapClient, rHash: string, amount: number, currency: string) => void): this;
+  emit(event: 'lndUpdate', currency: string, newPubKey: string): boolean;
+  emit(event: 'raidenUpdate', newAddress: string): boolean;
+  emit(event: 'htlcAccepted', swapClient: SwapClient, rHash: string, amount: number, currency: string): boolean;
+}
+
+class SwapClientManager extends EventEmitter {
   /** A map between currencies and all swap clients */
   public swapClients = new Map<string, SwapClient>();
   public raidenClient: RaidenClient;
@@ -17,8 +35,9 @@ class SwapClientManager {
   constructor(
     private config: Config,
     private loggers: Loggers,
-    private pool: Pool,
   ) {
+    super();
+
     this.raidenClient = new RaidenClient(config.raiden, loggers.raiden);
   }
 
@@ -42,7 +61,7 @@ class SwapClientManager {
    * and waits for the swap clients to initialize.
    * @returns A promise that resolves upon successful initialization, rejects otherwise.
    */
-  public init = async (): Promise<void> => {
+  public init = async (models: Models): Promise<void> => {
     const initPromises = [];
     // setup LND clients and initialize
     for (const currency in this.config.lnd) {
@@ -57,22 +76,30 @@ class SwapClientManager {
         initPromises.push(lndClient.init());
       }
     }
-    // setup raiden client and connect if configured
-    const raidenEnabled = !this.config.raiden.disable;
-    if (raidenEnabled) {
-      initPromises.push(this.raidenClient.init());
-    }
-    // bind event listeners
+    // setup Raiden
+    initPromises.push(this.raidenClient.init());
+
+    // bind event listeners before all swap clients have initialized
     this.bind();
-    // TODO: it might make sense to remove swap clients that turned out
-    // to be disabled after the initPromises resolve, since we
-    // currently treat disabled clients as if they don't exist.
+
     await Promise.all(initPromises);
-    // associate swap clients with currencies managed by raiden client
-    if (raidenEnabled) {
-      for (const currency of this.raidenClient.tokenAddresses.keys()) {
-        this.swapClients.set(currency, this.raidenClient);
+
+    // delete any swap clients that were disabled during initialization
+    this.swapClients.forEach((swapClient, currency) => {
+      if (swapClient.isDisabled()) {
+        this.swapClients.delete(currency);
       }
+    });
+
+    // associate swap clients with currencies managed by raiden client
+    if (!this.raidenClient.isDisabled()) {
+      const currencyInstances = await models.Currency.findAll();
+      currencyInstances.forEach((currency) => {
+        if (currency.tokenAddress) {
+          this.raidenClient.tokenAddresses.set(currency.id, currency.tokenAddress);
+          this.swapClients.set(currency.id, this.raidenClient);
+        }
+      });
     }
   }
 
@@ -91,10 +118,10 @@ class SwapClientManager {
    * @returns Nothing upon success, throws otherwise.
    */
   public add = (currency: Currency): void => {
-    if (isRaidenClient(currency.swapClient) && currency.tokenAddress) {
+    if (currency.swapClient === SwapClientType.Raiden && currency.tokenAddress) {
       this.swapClients.set(currency.id, this.raidenClient);
       this.raidenClient.tokenAddresses.set(currency.id, currency.tokenAddress);
-    } else if (isLndClient(currency.swapClient)) {
+    } else if (currency.swapClient === SwapClientType.Lnd) {
       // in case of lnd we check if the configuration includes swap client
       // for the specified currency
       let hasCurrency = false;
@@ -118,7 +145,7 @@ class SwapClientManager {
   public remove = (currency: string): void => {
     const swapClient = this.get(currency);
     this.swapClients.delete(currency);
-    if (swapClient && isRaidenClient(swapClient.type)) {
+    if (swapClient && isRaidenClient(swapClient)) {
       this.raidenClient.tokenAddresses.delete(currency);
     }
   }
@@ -127,11 +154,11 @@ class SwapClientManager {
    * Gets all lnd clients' pubKeys.
    * @returns An object containing lnd public keys.
    */
-  public getLndPubKeys = (): LndPubKeys => {
-    const lndPubKeys: LndPubKeys = {};
+  public getLndPubKeysMap = () => {
+    const lndPubKeys = new Map<string, string>();
     for (const [currency, swapClient] of this.swapClients.entries()) {
-      if (isLndClient(swapClient.type)) {
-        lndPubKeys[currency] = (swapClient as LndClient).pubKey;
+      if (isLndClient(swapClient) && swapClient.pubKey) {
+        lndPubKeys.set(currency, swapClient.pubKey);
       }
     }
     return lndPubKeys;
@@ -149,10 +176,10 @@ class SwapClientManager {
     // rather than determining it dynamically when needed. The benefits
     // would be slightly improved performance.
     for (const [currency, swapClient] of this.swapClients.entries()) {
-      if (isLndClient(swapClient.type)) {
+      if (isLndClient(swapClient)) {
         lndInfos[currency] = swapClient.isDisabled()
           ? undefined
-          : await (swapClient as LndClient).getLndInfo();
+          : await swapClient.getLndInfo();
       }
     }
     return lndInfos;
@@ -166,34 +193,38 @@ class SwapClientManager {
     let raidenClosed = false;
     for (const swapClient of this.swapClients.values()) {
       swapClient.close();
-      if (isRaidenClient(swapClient.type)) {
+      if (isRaidenClient(swapClient)) {
         raidenClosed = true;
       }
     }
     // we make sure to close raiden client because it
     // might not be associated with any currency
-    if (!this.config.raiden.disable && !raidenClosed) {
+    if (!this.raidenClient.isDisabled() && !raidenClosed) {
       this.raidenClient.close();
     }
   }
 
   private bind = () => {
     for (const [currency, swapClient] of this.swapClients.entries()) {
-      if (isLndClient(swapClient.type)) {
+      if (isLndClient(swapClient)) {
         swapClient.on('connectionVerified', (newPubKey) => {
           if (newPubKey) {
-            this.pool.updateLndPubKey(currency, newPubKey);
+            this.emit('lndUpdate', currency, newPubKey);
           }
+        });
+        // lnd clients emit htlcAccepted evented we must handle
+        swapClient.on('htlcAccepted', (rHash, amount) => {
+          this.emit('htlcAccepted', swapClient, rHash, amount, currency);
         });
       }
     }
     // we handle raiden separately because we don't want to attach
     // duplicate listeners in case raiden client is associated with
     // multiple currencies
-    if (!this.config.raiden.disable) {
+    if (!this.raidenClient.isDisabled()) {
       this.raidenClient.on('connectionVerified', (newAddress) => {
         if (newAddress) {
-          this.pool.updateRaidenAddress(newAddress);
+          this.emit('raidenUpdate', newAddress);
         }
       });
     }
