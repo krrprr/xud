@@ -61,7 +61,7 @@ describe('RaidenClient', () => {
 
   afterEach(async () => {
     jest.clearAllMocks();
-    await raiden.close();
+    raiden.close();
   });
 
   test('sendPayment removes 0x from secret', async () => {

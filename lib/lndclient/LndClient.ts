@@ -28,8 +28,10 @@ interface InvoicesMethodIndex extends InvoicesClient {
 interface LndClient {
   on(event: 'connectionVerified', listener: (newIdentifier?: string) => void): this;
   on(event: 'htlcAccepted', listener: (rHash: string, amount: number) => void): this;
+  on(event: 'channelBackup', listener: (channelBackup: string) => void): this;
   emit(event: 'connectionVerified', newIdentifier?: string): boolean;
   emit(event: 'htlcAccepted', rHash: string, amount: number): boolean;
+  emit(event: 'channelBackup', channelBackup: string): boolean;
 }
 
 /** A class representing a client to interact with lnd. */
@@ -44,6 +46,7 @@ class LndClient extends SwapClient {
   private credentials!: ChannelCredentials;
   private identityPubKey?: string;
   private channelSubscription?: ClientReadableStream<lndrpc.ChannelEventUpdate>;
+  private channelBackupSubscription?: ClientReadableStream<lndrpc.ChanBackupSnapshot>;
   private invoiceSubscriptions = new Map<string, ClientReadableStream<lndrpc.Invoice>>();
 
   /**
@@ -487,6 +490,13 @@ class LndClient extends SwapClient {
     }
   }
 
+  public exportAllChannelBackup = async () => {
+    const request = new lndrpc.ChanBackupExportRequest();
+    const response = await this.unaryCall<lndrpc.ChanBackupExportRequest, lndrpc.ChanBackupSnapshot>('exportAllChannelBackups', request);
+
+    return response.getMultiChanBackup()!.getMultiChanBackup_asB64();
+  }
+
   private addHoldInvoice = (request: lndinvoices.AddHoldInvoiceRequest): Promise<lndinvoices.AddHoldInvoiceResp> => {
     return this.unaryInvoiceCall<lndinvoices.AddHoldInvoiceRequest, lndinvoices.AddHoldInvoiceResp>('addHoldInvoice', request);
   }
@@ -538,6 +548,25 @@ class LndClient extends SwapClient {
       this.logger.error(`lnd has been disconnected, error: ${error}`);
       await this.disconnect();
     });
+  }
+
+  /**
+   * Subscribes to channel backups
+   */
+  public subscribeChannelBackups = () => {
+    if (!this.lightning) {
+      throw errors.LND_IS_UNAVAILABLE(this.status);
+    }
+
+    if (this.channelBackupSubscription) {
+      this.channelBackupSubscription.cancel();
+    }
+
+    this.channelBackupSubscription = this.lightning.subscribeChannelBackups(new lndrpc.ChannelBackupSubscription(), this.meta)
+      .on('data', (backupSnapshot: lndrpc.ChanBackupSnapshot) => {
+        const multiBackup = backupSnapshot.getMultiChanBackup()!;
+        this.emit('channelBackup', multiBackup.getMultiChanBackup_asB64().toString());
+      });
   }
 
   /**
