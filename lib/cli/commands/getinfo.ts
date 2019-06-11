@@ -2,7 +2,7 @@ import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
 import Table, { VerticalTable } from 'cli-table3';
 import colors from 'colors/safe';
-import { GetInfoRequest, GetInfoResponse, LndInfo } from '../../proto/xudrpc_pb';
+import { GetInfoRequest, GetInfoResponse, LndInfo, RaidenInfo } from '../../proto/xudrpc_pb';
 
 type generalInfo = {
   version: string;
@@ -66,7 +66,7 @@ const displayGeneral = (info: generalInfo) => {
     { [colors.blue('Version')]: info.version },
     { [colors.blue('Pairs')]: info.numPairs },
     { [colors.blue('Peers')]: info.numPeers },
-    { [colors.blue('Pubic key')]: info.nodePubKey },
+    { [colors.blue('Public key')]: info.nodePubKey },
   );
   console.log(colors.underline(colors.bold('\nGeneral XUD Info')));
   console.log(table.toString(), '\n');
@@ -75,27 +75,40 @@ const displayGeneral = (info: generalInfo) => {
 const displayOrders = (orders: {own: number, peer: number}) => {
   const table = new Table() as VerticalTable;
   table.push(
-    { [colors.blue('Own orders')]: orders.own },
-    { [colors.blue('Peer orders')]: orders.peer },
+    { [colors.red('Own orders')]: orders.own },
+    { [colors.green('Peer orders')]: orders.peer },
   );
   console.log(colors.underline(colors.bold('\nOrders:')));
   console.log(table.toString(), '\n');
 };
 
-const displayGetInfo = (request: GetInfoResponse.AsObject) => {
+const displayRaiden = (info: RaidenInfo.AsObject) => {
+  const table = new Table () as VerticalTable;
+  table.push(
+    {[colors.blue('Version')]: info.version},
+    {[colors.blue('Address')]: info.address},
+    {[colors.blue('Channels')]: info.channels},
+    {[colors.blue('Error')]: info.error},
+  );
+  console.log(colors.underline(colors.bold('\nRaiden info:')));
+  console.log(table.toString(), '\n');
+}
+
+const displayGetInfo = (response: GetInfoResponse.AsObject) => {
   displayGeneral({
-    nodePubKey: request.nodePubKey,
-    numPairs: request.numPairs,
-    numPeers: request.numPeers,
-    version: request.version,
+    nodePubKey: response.nodePubKey,
+    numPairs: response.numPairs,
+    numPeers: response.numPeers,
+    version: response.version,
   });
-  if (request.orders) {
+  if (response.orders) {
     displayOrders({
-      own: request.orders.own,
-      peer: request.orders.peer,
+      own: response.orders.own,
+      peer: response.orders.peer,
     });
   }
-  request.lndMap.forEach(asset =>   displayLndInfo(asset[0], asset[1]));
+  displayRaiden(response.raiden);
+  response.lndMap.forEach((asset) =>   displayLndInfo(asset[0], asset[1]));
 };
 
 export const command = 'getinfo';
