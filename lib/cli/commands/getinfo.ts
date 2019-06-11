@@ -107,7 +107,10 @@ const displayGetInfo = (response: GetInfoResponse.AsObject) => {
       peer: response.orders.peer,
     });
   }
-  displayRaiden(response.raiden);
+  if (response.raiden) {
+    displayRaiden(response.raiden);
+  }
+
   response.lndMap.forEach((asset) =>   displayLndInfo(asset[0], asset[1]));
 };
 
