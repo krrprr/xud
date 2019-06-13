@@ -83,16 +83,16 @@ const displayOrders = (orders: {own: number, peer: number}) => {
 };
 
 const displayRaiden = (info: RaidenInfo.AsObject) => {
-  const table = new Table () as VerticalTable;
+  const table = new Table() as VerticalTable;
   table.push(
-    {[colors.blue('Version')]: info.version},
-    {[colors.blue('Address')]: info.address},
-    {[colors.blue('Channels')]: info.channels},
-    {[colors.blue('Error')]: info.error},
+    { [colors.blue('Version')]: info.version },
+    { [colors.blue('Address')]: info.address },
+    { [colors.blue('Channels')]: info.channels },
+    { [colors.blue('Error')]: info.error },
   );
   console.log(colors.underline(colors.bold('\nRaiden info:')));
   console.log(table.toString(), '\n');
-}
+};
 
 const displayGetInfo = (response: GetInfoResponse.AsObject) => {
   displayGeneral({
@@ -111,7 +111,7 @@ const displayGetInfo = (response: GetInfoResponse.AsObject) => {
     displayRaiden(response.raiden);
   }
 
-  response.lndMap.forEach((asset) =>   displayLndInfo(asset[0], asset[1]));
+  response.lndMap.forEach(asset => displayLndInfo(asset[0], asset[1]));
 };
 
 export const command = 'getinfo';
