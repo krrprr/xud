@@ -13,8 +13,8 @@ type FormattedTradingPairOrders = {
 const COLUMNS = [19, 19, 12, 19, 19, 12];
 const COLUMNS_IN_ORDER_SIDE = COLUMNS.length / 2;
 const HEADER = [
-  { content: colors.blue('Buy'), colSpan: 3 },
-  { content: colors.blue('Sell'), colSpan: 3 },
+  { content: colors.green('Buy'), colSpan: 3 },
+  { content: colors.red('Sell'), colSpan: 3 },
 ];
 const SECONDARY_HEADER = [
   colors.blue('Quantity'),
