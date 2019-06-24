@@ -355,12 +355,12 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (this.swaps && !this.nosanitychecks) {
+    if (!this.nosanitychecks) {
       const {
         outboundCurrency,
         inboundCurrency,
         outboundAmount,
-        } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
+      } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
 
       const outboundSwapClient = this.swaps.swapClientManager.get(outboundCurrency);
       const inboundSwapClient = this.swaps.swapClientManager.get(inboundCurrency);
