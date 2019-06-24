@@ -15,7 +15,7 @@ import { PacketType } from '../p2p/packets';
 import SwapClientManager from './SwapClientManager';
 import { errors } from './errors';
 
-type OrderToAccept = Pick<SwapDeal, 'quantity' | 'price' | 'localId' | 'isBuy'> & {
+export type OrderToAccept = Pick<SwapDeal, 'quantity' | 'price' | 'localId' | 'isBuy'> & {
   quantity: number;
 };
 
@@ -41,6 +41,7 @@ class Swaps extends EventEmitter {
     BTC: 1,
     LTC: 1,
     WETH: 10 ** 10,
+    DAI: 10 ** 10,
   };
   /** The maximum time in milliseconds we will wait for a swap to be accepted before failing it. */
   private static readonly SWAP_ACCEPT_TIMEOUT = 10000;
@@ -140,7 +141,7 @@ class Swaps extends EventEmitter {
       this.sanitySwaps.set(rHash, sanitySwap);
       const swapClient = this.swapClientManager.get(currency)!;
       try {
-        await swapClient.addInvoice(rHash, 1);
+        await swapClient.addInvoice(rHash, 1, swapClient.cltvDelta);
       } catch (err) {
         this.logger.error('could not add invoice for sanity swap', err);
         return;
@@ -325,7 +326,7 @@ class Swaps extends EventEmitter {
 
     try {
       await Promise.all([
-        swapClient.addInvoice(rHash, 1),
+        swapClient.addInvoice(rHash, 1, swapClient.cltvDelta),
         peer.sendPacket(sanitySwapInitPacket),
         peer.wait(sanitySwapInitPacket.header.id, PacketType.SanitySwapAck, Swaps.SANITY_SWAP_INIT_TIMEOUT),
       ]);
@@ -484,14 +485,7 @@ class Swaps extends EventEmitter {
     }
 
     try {
-      this.logger.debug(`trying to query routes from maker to taker with ${takerPubKey}
-        and amount of ${takerAmount} and FinalCltvDelta ${takerSwapClient.cltvDelta}`);
-      deal.makerToTakerRoutes = await takerSwapClient.getRoutes(takerAmount, takerPubKey);
-      this.logger.debug(`queried routes total of ${deal.makerToTakerRoutes.length} available routes from maker to taker`);
-      deal.makerToTakerRoutes.forEach((availableRoute) => {
-
-        this.logger.debug(`available route from maker to taker with total time lock: ${availableRoute.getTotalTimeLock()}`);
-      });
+      deal.makerToTakerRoutes = await takerSwapClient.getRoutes(takerAmount, takerPubKey, deal.takerCltvDelta);
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, err.message);
       await this.sendErrorToPeer({
@@ -552,11 +546,30 @@ class Swaps extends EventEmitter {
       this.logger.debug(`makerCltvDelta: ${deal.makerCltvDelta}`);
     }
 
+    if (!deal.makerCltvDelta) {
+      this.failDeal(deal, SwapFailureReason.UnexpectedClientError, 'Could not calculate makerCltvDelta.');
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
+      return false;
+    }
+
     const makerSwapClient = this.swapClientManager.get(makerCurrency)!;
     try {
-      await makerSwapClient.addInvoice(deal.rHash, deal.makerAmount);
+      await makerSwapClient.addInvoice(deal.rHash, deal.makerAmount, deal.makerCltvDelta);
     } catch (err) {
-      this.logger.error('could not add invoice for while accepting deal', err);
+      this.failDeal(deal, SwapFailureReason.UnexpectedClientError, `could not add invoice for while accepting deal: ${err.message}`);
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: deal.failureReason!,
+        errorMessage: deal.errorMessage,
+        reqId: requestPacket.header.id,
+      });
       return false;
     }
 
@@ -624,7 +637,7 @@ class Swaps extends EventEmitter {
     }
 
     try {
-      await takerSwapClient.addInvoice(deal.rHash, deal.takerAmount);
+      await takerSwapClient.addInvoice(deal.rHash, deal.takerAmount, takerSwapClient.cltvDelta);
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, err.message);
       await this.sendErrorToPeer({
