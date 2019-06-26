@@ -1,5 +1,4 @@
 import errorCodesPrefix from '../constants/errorCodesPrefix';
-import { SwapClientType } from '../constants/enums';
 
 const codesPrefix = errorCodesPrefix.ORDERBOOK;
 const errorCodes = {
@@ -67,8 +66,8 @@ const errors = {
     message: `${currency} outbound balance of ${availableAmount} is not sufficient for order amount of ${amount}`,
     code: errorCodes.INSUFFICIENT_OUTBOUND_BALANCE,
   }),
-  EXCEEDING_LIMIT: (client: SwapClientType, amount: number, limit: number) => ({
-    message: `outbound amount: ${amount} is exceeding limit of: ${limit} set for ${client === SwapClientType.Lnd ? 'LND' : 'RAIDEN'} client`,
+  EXCEEDING_LIMIT: (currency: string, amount: number, limit: number) => ({
+    message: `outbound amount: ${amount} is exceeding limit of: ${limit} set for ${currency}`,
     code: errorCodes.EXCEEDING_LIMIT,
   }),
 };

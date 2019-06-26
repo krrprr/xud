@@ -369,12 +369,10 @@ class OrderBook extends EventEmitter {
       }
 
       // Check if order abides to limits
-      if (swapClient.type === SwapClientType.Lnd && outboundAmount > Limits.LndLimit
-        || swapClient.type === SwapClientType.Raiden && outboundAmount > Limits.RaidenLimit) {
-        const limit = swapClient.type === SwapClientType.Lnd ? Limits.LndLimit : Limits.RaidenLimit;
-        throw errors.EXCEEDING_LIMIT(swapClient.type, outboundAmount, limit);
+      const limit = this.getLimit(outboundCurrency);
+      if (limit && outboundAmount > limit) {
+        throw errors.EXCEEDING_LIMIT(outboundCurrency, outboundAmount, limit);
       }
-
     }
 
     // perform matching routine. maker orders that are matched will be removed from the order book.
@@ -864,6 +862,25 @@ class OrderBook extends EventEmitter {
         failureReason: SwapFailureReason.OrderOnHold,
       }, requestPacket.header.id));
     }
+  }
+
+  /**
+   * Returns maximum transfer amount for a swap operation for the given outbound currency.
+   * @param outboundCurrency the outbound currency during swap
+   */
+  private getLimit = (outboundCurrency: string): any => {
+    switch (outboundCurrency) {
+      case 'BTC':
+        return Limits.Btc;
+      case 'WETH':
+        return Limits.Weth;
+      case 'LTC':
+        return Limits.Ltc;
+      case 'DAI':
+        return Limits.Dai;
+    }
+
+    return undefined;
   }
 }
 

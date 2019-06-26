@@ -140,6 +140,8 @@ export enum DisconnectionReason {
 }
 
 export enum Limits {
-  LndLimit = 0.04,
-  RaidenLimit = 1,
+  Btc = 4294967,
+  Ltc = 1111,
+  Weth = 1111,
+  Dai = 1111,
 }
