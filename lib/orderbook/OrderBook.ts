@@ -72,7 +72,8 @@ class OrderBook extends EventEmitter {
   private pairInstances = new Map<string, PairInstance>();
   private repository: OrderBookRepository;
   private logger: Logger;
-  private nosanitychecks: boolean;
+  private nosanityswaps: boolean;
+  private nobalancechecks: boolean;
   private pool: Pool;
   private swaps: Swaps;
 
@@ -90,14 +91,15 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor({ logger, models, pool, swaps, nomatching = false, nosanitychecks = false }:
+  constructor({ logger, models, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false }:
   {
     logger: Logger,
     models: Models,
     pool: Pool,
     swaps: Swaps,
+    nosanityswaps: boolean,
+    nobalancechecks: boolean,
     nomatching?: boolean,
-    nosanitychecks?: boolean,
   }) {
     super();
 
@@ -105,7 +107,8 @@ class OrderBook extends EventEmitter {
     this.pool = pool;
     this.swaps = swaps;
     this.nomatching = nomatching;
-    this.nosanitychecks = nosanitychecks;
+    this.nosanityswaps = nosanityswaps;
+    this.nobalancechecks = nobalancechecks;
 
     this.repository = new OrderBookRepository(models);
 
@@ -355,7 +358,7 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (!this.nosanitychecks) {
+    if (!this.nobalancechecks) {
       const {
         outboundCurrency,
         inboundCurrency,
@@ -375,7 +378,7 @@ class OrderBook extends EventEmitter {
       }
 
       // check if sufficient outbound channel capacity exists
-      if (outboundAmount > outboundSwapClient.maximumOutboundCapacity && !this.nosanitychecks) {
+      if (outboundAmount > outboundSwapClient.maximumOutboundCapacity) {
         throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, outboundSwapClient.maximumOutboundCapacity);
       }
     }
@@ -711,8 +714,8 @@ class OrderBook extends EventEmitter {
    * @param pairIds the list of trading pair ids to verify
    */
   private verifyPeerPairs = async (peer: Peer, pairIds: string[]) => {
-    if (this.nosanitychecks) {
-      // we have disabled sanity checks, so assume all pairs should be activated
+    if (this.nosanityswaps) {
+      // we have disabled sanity swaps, so assume all pairs should be activated
       pairIds.forEach(peer.activatePair);
       return;
     }
