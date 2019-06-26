@@ -119,7 +119,6 @@ class Xud extends EventEmitter {
         models: this.db.models,
         nomatching: this.config.nomatching,
         pool: this.pool,
-        limits: this.config.limits,
         swaps: this.swaps,
         nosanityswaps: this.config.nosanityswaps,
         nobalancechecks: this.config.nobalancechecks,

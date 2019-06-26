@@ -138,3 +138,8 @@ export enum DisconnectionReason {
   AuthFailureInvalidSignature = 12,
   WireProtocolErr = 13,
 }
+
+export enum Limits {
+  LndLimit = 0.04,
+  RaidenLimit = 1,
+}

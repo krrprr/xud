@@ -11,10 +11,10 @@ import Logger from '../Logger';
 import { ms, derivePairId, setTimeoutPromise } from '../utils/utils';
 import { Models } from '../db/DB';
 import Swaps from '../swaps/Swaps';
-import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType } from '../constants/enums';
+import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType, Limits } from '../constants/enums';
 import { CurrencyInstance, PairInstance, CurrencyFactory } from '../db/types';
 import { Pair, OrderIdentifier, OwnOrder, OrderPortion, OwnLimitOrder, PeerOrder, Order, PlaceOrderEvent,
-  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder, Limits } from './types';
+  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder } from './types';
 import { SwapRequestPacket, SwapFailedPacket } from '../p2p/packets';
 import { SwapSuccess, SwapDeal, SwapFailure } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
@@ -74,7 +74,6 @@ class OrderBook extends EventEmitter {
   private logger: Logger;
   private nosanityswaps: boolean;
   private nobalancechecks: boolean;
-  private limits: Limits;
   private pool: Pool;
   private swaps: Swaps;
 
@@ -92,11 +91,10 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor({ logger, models, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false, limits }:
+  constructor({ logger, models, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false }:
   {
     logger: Logger,
     models: Models,
-    limits: Limits,
     pool: Pool,
     swaps: Swaps,
     nosanityswaps: boolean,
@@ -108,7 +106,6 @@ class OrderBook extends EventEmitter {
     this.logger = logger;
     this.pool = pool;
     this.swaps = swaps;
-    this.limits = limits;
     this.nomatching = nomatching;
     this.nosanityswaps = nosanityswaps;
     this.nobalancechecks = nobalancechecks;
@@ -372,9 +369,9 @@ class OrderBook extends EventEmitter {
       }
 
       // Check if order abides to limits
-      if (swapClient.type === SwapClientType.Lnd && outboundAmount > this.limits.lnd
-        || swapClient.type === SwapClientType.Raiden && outboundAmount > this.limits.raiden) {
-        const limit = swapClient.type === SwapClientType.Lnd ? this.limits.lnd : this.limits.raiden;
+      if (swapClient.type === SwapClientType.Lnd && outboundAmount > Limits.LndLimit
+        || swapClient.type === SwapClientType.Raiden && outboundAmount > Limits.RaidenLimit) {
+        const limit = swapClient.type === SwapClientType.Lnd ? Limits.LndLimit : Limits.RaidenLimit;
         throw errors.EXCEEDING_LIMIT(swapClient.type, outboundAmount, limit);
       }
 

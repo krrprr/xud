@@ -14,11 +14,6 @@ import { SwapClientType } from '../../lib/constants/enums';
 import { createOwnOrder } from '../utils';
 import sinon  from 'sinon';
 
-const limits: orders.Limits = {
-  lnd: 0.04 ,
-  raiden: 1,
-};
-
 const PAIR_ID = 'LTC/BTC';
 const currencies = PAIR_ID.split('/');
 const loggers = Logger.createLoggers(Level.Warn);
@@ -81,7 +76,6 @@ describe('OrderBook', () => {
     orderBook = new OrderBook({
       pool,
       swaps,
-      limits,
       logger: loggers.orderbook,
       models: db.models,
       nosanityswaps: true,
@@ -192,7 +186,6 @@ describe('nomatching OrderBook', () => {
     orderBook = new OrderBook({
       pool,
       swaps,
-      limits,
       logger: loggers.orderbook,
       models: db.models,
       nomatching: true,

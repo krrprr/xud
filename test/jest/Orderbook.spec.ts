@@ -116,7 +116,6 @@ describe('OrderBook', () => {
     orderbook = new Orderbook({
       pool,
       swaps,
-      limits: config.limits,
       logger: loggers.orderbook,
       models: db.models,
       nomatching: config.nomatching,
@@ -135,7 +134,6 @@ describe('OrderBook', () => {
     orderbook = new Orderbook({
       pool,
       swaps,
-      limits: config.limits,
       logger: loggers.orderbook,
       models: db.models,
       nomatching: config.nomatching,

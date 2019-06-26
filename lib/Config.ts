@@ -8,7 +8,6 @@ import { RaidenClientConfig } from './raidenclient/types';
 import { Level } from './Logger';
 import { XuNetwork } from './constants/enums';
 import { PoolConfig } from './p2p/types';
-import { Limits } from './orderbook/types';
 
 class Config {
   public p2p: PoolConfig;
@@ -17,7 +16,6 @@ class Config {
   public logpath: string;
   public logdateformat: string;
   public network: XuNetwork;
-  public limits: Limits;
   public rpc: { disable: boolean, host: string, port: number };
   public http: { port: number };
   public lnd: { [currency: string]: LndClientConfig | undefined } = {};
@@ -119,10 +117,6 @@ class Config {
       host: 'localhost',
       port: 5001,
     };
-    this.limits = {
-      lnd: 0.04 ,
-      raiden: 1,
-    };
   }
 
   public load = async (args?: { [argName: string]: any }): Promise<Config> => {
@@ -161,11 +155,6 @@ class Config {
         this.logpath = this.getDefaultLogPath();
         this.dbpath = this.getDefaultDbPath();
         this.updateMacaroonPaths();
-      }
-
-      if (props.limits) {
-        props.limits.lnd ? this.limits.lnd = props.limits.lnd : undefined;
-        props.limits.raiden ? this.limits.raiden = props.limits.raiden : undefined;
       }
 
       // merge parsed json properties from config file to the default config
