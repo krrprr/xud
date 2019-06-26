@@ -84,6 +84,8 @@ describe('OrderBook', () => {
       limits,
       logger: loggers.orderbook,
       models: db.models,
+      nosanityswaps: true,
+      nobalancechecks: true,
     });
     await orderBook.init();
   });
@@ -194,6 +196,8 @@ describe('nomatching OrderBook', () => {
       logger: loggers.orderbook,
       models: db.models,
       nomatching: true,
+      nosanityswaps: true,
+      nobalancechecks: true,
     });
     await orderBook.init();
   });

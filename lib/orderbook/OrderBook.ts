@@ -72,7 +72,8 @@ class OrderBook extends EventEmitter {
   private pairInstances = new Map<string, PairInstance>();
   private repository: OrderBookRepository;
   private logger: Logger;
-  private nosanitychecks: boolean;
+  private nosanityswaps: boolean;
+  private nobalancechecks: boolean;
   private limits: Limits;
   private pool: Pool;
   private swaps: Swaps;
@@ -91,15 +92,16 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor({ logger, models, pool, swaps, nomatching = false, nosanitychecks = false, limits }:
+  constructor({ logger, models, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false, limits }:
   {
     logger: Logger,
     models: Models,
     limits: Limits,
     pool: Pool,
     swaps: Swaps,
+    nosanityswaps: boolean,
+    nobalancechecks: boolean,
     nomatching?: boolean,
-    nosanitychecks?: boolean,
   }) {
     super();
 
@@ -108,7 +110,8 @@ class OrderBook extends EventEmitter {
     this.swaps = swaps;
     this.limits = limits;
     this.nomatching = nomatching;
-    this.nosanitychecks = nosanitychecks;
+    this.nosanityswaps = nosanityswaps;
+    this.nobalancechecks = nobalancechecks;
 
     this.repository = new OrderBookRepository(models);
 
@@ -357,7 +360,7 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (!this.nosanitychecks) {
+    if (!this.nobalancechecks) {
       // check if sufficient outbound channel capacity exists
       const { outboundCurrency, outboundAmount } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
       const swapClient = this.swaps.swapClientManager.get(outboundCurrency);
@@ -708,8 +711,8 @@ class OrderBook extends EventEmitter {
    * @param pairIds the list of trading pair ids to verify
    */
   private verifyPeerPairs = async (peer: Peer, pairIds: string[]) => {
-    if (this.nosanitychecks) {
-      // we have disabled sanity checks, so assume all pairs should be activated
+    if (this.nosanityswaps) {
+      // we have disabled sanity swaps, so assume all pairs should be activated
       pairIds.forEach(peer.activatePair);
       return;
     }

@@ -110,8 +110,9 @@ describe('OrderBook', () => {
     jest.clearAllMocks();
   });
 
-  test('nosanitychecks enabled adds pairs and requests orders', async () => {
-    config.nosanitychecks = true;
+  test('nosanityswaps enabled adds pairs and requests orders', async () => {
+    config.nosanityswaps = true;
+    config.nobalancechecks = false;
     orderbook = new Orderbook({
       pool,
       swaps,
@@ -119,7 +120,8 @@ describe('OrderBook', () => {
       logger: loggers.orderbook,
       models: db.models,
       nomatching: config.nomatching,
-      nosanitychecks: config.nosanitychecks,
+      nosanityswaps: config.nosanityswaps,
+      nobalancechecks: config.nobalancechecks,
     });
     await orderbook.init();
     const pairIds = ['LTC/BTC', 'WETH/BTC'];
@@ -127,8 +129,9 @@ describe('OrderBook', () => {
     expect(mockActivatePair).toHaveBeenCalledTimes(2);
   });
 
-  test('placeOrder insufficient outbound balance does throw when nosanitychecks disabled', async () => {
-    config.nosanitychecks = false;
+  test('placeOrder insufficient outbound balance does throw when balancechecks disabled', async () => {
+    config.nosanityswaps = true;
+    config.nobalancechecks = false;
     orderbook = new Orderbook({
       pool,
       swaps,
@@ -136,7 +139,8 @@ describe('OrderBook', () => {
       logger: loggers.orderbook,
       models: db.models,
       nomatching: config.nomatching,
-      nosanitychecks: config.nosanitychecks,
+      nosanityswaps: config.nosanityswaps,
+      nobalancechecks: config.nobalancechecks,
     });
     await orderbook.init();
     const quantity = 500000000000;
