@@ -11,7 +11,7 @@ export default (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) 
     addresses: {
       type: Sequelize.VIRTUAL,
       get(this: db.NodeInstance) {
-        return JSON.parse(this.addressesText);
+        return JSON.parse(this.addressesText || '[]');
       },
       set(this: db.NodeInstance, value: Address[]) {
         if (value) {
