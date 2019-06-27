@@ -709,14 +709,14 @@ class Peer extends EventEmitter {
 
     // verify that the init packet came from the expected node
     if (expectedNodePubKey && expectedNodePubKey !== sourceNodePubKey) {
-      await this.close(this.nodePubKey, DisconnectionReason.UnexpectedIdentity);
+      await this.close(nodePubKey, DisconnectionReason.UnexpectedIdentity);
       throw errors.UNEXPECTED_NODE_PUB_KEY(sourceNodePubKey, expectedNodePubKey, addressUtils.toString(this.address));
     }
 
     // verify that the init packet was intended for us
     if (targetNodePubKey !== nodePubKey) {
       this.emit('reputation', ReputationEvent.InvalidAuth);
-      await this.close(this.nodePubKey, DisconnectionReason.AuthFailureInvalidTarget);
+      await this.close(nodePubKey, DisconnectionReason.AuthFailureInvalidTarget);
       throw errors.AUTH_FAILURE_INVALID_TARGET(sourceNodePubKey, targetNodePubKey);
     }
 
@@ -731,7 +731,7 @@ class Peer extends EventEmitter {
 
     if (!verified) {
       this.emit('reputation', ReputationEvent.InvalidAuth);
-      await this.close(this.nodePubKey, DisconnectionReason.AuthFailureInvalidSignature);
+      await this.close(nodePubKey, DisconnectionReason.AuthFailureInvalidSignature);
       throw errors.AUTH_FAILURE_INVALID_SIGNATURE(sourceNodePubKey);
     }
 
