@@ -17,12 +17,12 @@ const HEADER = [
   { content: colors.red('Sell'), colSpan: 3 },
 ];
 const SECONDARY_HEADER = [
-  colors.blue('Quantity'),
-  colors.blue('Price'),
-  colors.blue('Own Order'),
-  colors.blue('Quantity'),
-  colors.blue('Price'),
-  colors.blue('Own Order'),
+  colors.green('Quantity'),
+  colors.green('Price'),
+  colors.green('Own Order'),
+  colors.red('Quantity'),
+  colors.red('Price'),
+  colors.red('Own Order'),
 ];
 
 const addSide = (orderSide: Order.AsObject[]): string[] => {
