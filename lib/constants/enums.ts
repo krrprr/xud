@@ -81,6 +81,12 @@ export enum SwapState {
   Active = 0,
   Error = 1,
   Completed = 2,
+  /**
+   * A swap that was executed but wasn't formally completed. This may occur as a result of xud
+   * crashing late in the swap process, after htlcs for both legs of the swap are set up but
+   * before the swap is formally complete.
+   */
+  Recovered = 3,
 }
 
 export enum ReputationEvent {
@@ -125,6 +131,8 @@ export enum SwapFailureReason {
   DealTimedOut = 11,
   /** The swap failed due to an unrecognized error. */
   UnknownError = 12,
+  /** The swap failed because of a system or xud crash while the swap was being executed. */
+  Crash = 12,
 }
 
 export enum DisconnectionReason {

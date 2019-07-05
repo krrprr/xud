@@ -1,6 +1,6 @@
 import grpc, { ChannelCredentials, ClientReadableStream } from 'grpc';
 import Logger from '../Logger';
-import SwapClient, { ClientStatus, SwapClientInfo } from '../swaps/SwapClient';
+import SwapClient, { ClientStatus, SwapClientInfo, PaymentState } from '../swaps/SwapClient';
 import errors from './errors';
 import { LightningClient, WalletUnlockerClient } from '../proto/lndrpc_grpc_pb';
 import { InvoicesClient } from '../proto/lndinvoices_grpc_pb';
@@ -594,6 +594,38 @@ class LndClient extends SwapClient {
       this.logger.debug(`canceled invoice for ${rHash}`);
       invoiceSubscription.cancel();
     }
+  }
+
+  public lookupPayment = async (rHash: string) => {
+    const payments = await this.listPayments(true);
+    for (const payment of payments.getPaymentsList()) {
+      if (payment.getPaymentHash() === rHash) {
+        const paymentStatus = payment.getStatus();
+        if (payment.getStatus() === lndrpc.Payment.PaymentStatus.SUCCEEDED) {
+          const preimage = payment.getPaymentPreimage();
+          return { preimage, state: PaymentState.Succeeded };
+        } else if (paymentStatus === lndrpc.Payment.PaymentStatus.FAILED) {
+          return { state: PaymentState.Failed };
+        } else if (paymentStatus === lndrpc.Payment.PaymentStatus.IN_FLIGHT) {
+          return { state: PaymentState.Pending };
+        } else {
+          // unexpected payment status
+          this.logger.warn(`unexpected payment state for payment with hash ${rHash}`);
+          return { state: PaymentState.Failed };
+        }
+      }
+    }
+
+    // if no payment is found, we assume that the payment was never attempted by lnd
+    return { state: PaymentState.Failed };
+  }
+
+  private listPayments = (includeIncomplete?: boolean): Promise<lndrpc.ListPaymentsResponse> => {
+    const request = new lndrpc.ListPaymentsRequest();
+    if (includeIncomplete) {
+      request.setIncludeIncomplete(includeIncomplete);
+    }
+    return this.unaryInvoiceCall<lndrpc.ListPaymentsRequest, lndrpc.ListPaymentsResponse>('listPayments', request);
   }
 
   private addHoldInvoice = (request: lndinvoices.AddHoldInvoiceRequest): Promise<lndinvoices.AddHoldInvoiceResp> => {
