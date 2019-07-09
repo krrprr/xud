@@ -5,7 +5,7 @@ import errors from './errors';
 import { SwapDeal } from '../swaps/types';
 import { SwapClientType, SwapState, SwapRole } from '../constants/enums';
 import assert from 'assert';
-import { RaidenClientConfig, RaidenInfo, OpenChannelPayload, Channel, ChannelEvent, TokenPaymentRequest, TokenPaymentResponse } from './types';
+import { RaidenClientConfig, RaidenInfo, OpenChannelPayload, Channel, TokenPaymentRequest, TokenPaymentResponse } from './types';
 
 type RaidenErrorResponse = { errors: string };
 
@@ -33,12 +33,19 @@ async function parseResponseBody<T>(res: http.IncomingMessage): Promise<T> {
  */
 class RaidenClient extends SwapClient {
   public readonly type = SwapClientType.Raiden;
-  public readonly cltvDelta: number = 1;
+  public readonly cltvDelta: number = 5760;
   public address?: string;
+  /** A map of currency symbols to token addresses. */
   public tokenAddresses = new Map<string, string>();
   private port: number;
   private host: string;
   private disable: boolean;
+
+  // TODO: Populate the mapping from the database (Currency.decimalPlaces).
+  private static readonly UNITS_PER_CURRENCY: { [key: string]: number } = {
+    WETH: 10 ** 10,
+    DAI: 10 ** 10,
+  };
 
   /**
    * Creates a raiden client.
@@ -71,6 +78,7 @@ class RaidenClient extends SwapClient {
       /** The new raiden address value if different from the one we had previously. */
       let newAddress: string | undefined;
       if (this.address !== address) {
+        this.logger.debug(`address is ${newAddress}`);
         newAddress = address;
         this.address = newAddress;
       }
@@ -108,11 +116,11 @@ class RaidenClient extends SwapClient {
     let tokenAddress;
     if (deal.role === SwapRole.Maker) {
       // we are the maker paying the taker
-      amount = deal.takerAmount;
+      amount = deal.takerUnits;
       tokenAddress = this.tokenAddresses.get(deal.takerCurrency);
     } else {
       // we are the taker paying the maker
-      amount = deal.makerAmount;
+      amount = deal.makerUnits;
       tokenAddress = this.tokenAddresses.get(deal.makerCurrency);
     }
     if (!tokenAddress) {
@@ -150,8 +158,9 @@ class RaidenClient extends SwapClient {
 
   public getRoutes =  async (_amount: number, _destination: string) => {
     // stub placeholder, query routes not currently implemented in raiden
+    // assume a fixed lock time of 100 Raiden's blocks
     return [{
-      getTotalTimeLock: () => 1,
+      getTotalTimeLock: () => 101,
     }];
   }
 
@@ -249,43 +258,39 @@ class RaidenClient extends SwapClient {
   }
 
   /**
-   * Queries for events tied to a specific channel.
-   */
-  public getChannelEvents = async (channel_address: string) => {
-    // TODO: specify a "from_block"  query argument to only get events since a specific block.
-    const endpoint = `events/channels/${channel_address}`;
-    const res = await this.sendRequest(endpoint, 'GET');
-    return parseResponseBody<ChannelEvent[]>(res);
-  }
-
-  /**
    * Gets info about a given raiden payment channel.
+   * @param token_address the token address for the network to which the channel belongs
    * @param channel_address the address of the channel to query
    */
-  public getChannel = async (channel_address: string): Promise<Channel> => {
-    const endpoint = `channels/${channel_address}`;
+  public getChannel = async (token_address: string, channel_address: string): Promise<Channel> => {
+    const endpoint = `channels/${token_address}/${channel_address}`;
     const res = await this.sendRequest(endpoint, 'GET');
     return parseResponseBody<Channel>(res);
   }
 
   /**
    * Gets info about all non-settled channels.
+   * @param token_address an optional parameter to specify channels belonging to the specified token network
    */
-  public getChannels = async (): Promise<[Channel]> => {
-    const endpoint = 'channels';
+  public getChannels = async (token_address?: string): Promise<Channel[]> => {
+    const endpoint = token_address ? `channels/${token_address}` : 'channels';
     const res = await this.sendRequest(endpoint, 'GET');
     return parseResponseBody<[Channel]>(res);
   }
 
   /**
-   * Returns the total balance available across all channels.
+   * Returns the total balance available across all channels for a specified currency.
    */
-  public channelBalance = async (): Promise<ChannelBalance> => {
-    // TODO: refine logic to determine balance per token rather than all combined
-    const channels = await this.getChannels();
+  public channelBalance = async (currency?: string): Promise<ChannelBalance> => {
+    if (!currency) {
+      return { balance: 0, pendingOpenBalance: 0 };
+    }
+
+    const channels = await this.getChannels(this.tokenAddresses.get(currency));
     const balance = channels.filter(channel => channel.state === 'opened')
       .map(channel => channel.balance)
-      .reduce((acc, sum) => sum + acc, 0);
+      .reduce((sum, acc) => sum + acc, 0)
+      / (RaidenClient.UNITS_PER_CURRENCY[currency] || 1);
     return { balance, pendingOpenBalance: 0 };
   }
 

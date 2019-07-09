@@ -21,7 +21,7 @@
         "operationId": "AddCurrency",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcAddCurrencyResponse"
             }
@@ -48,7 +48,7 @@
         "operationId": "AddPair",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcAddPairResponse"
             }
@@ -75,7 +75,7 @@
         "operationId": "Ban",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcBanResponse"
             }
@@ -102,7 +102,7 @@
         "operationId": "ChannelBalance",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcChannelBalanceResponse"
             }
@@ -128,7 +128,7 @@
         "operationId": "Connect",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcConnectResponse"
             }
@@ -155,7 +155,7 @@
         "operationId": "ListCurrencies",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcListCurrenciesResponse"
             }
@@ -172,7 +172,7 @@
         "operationId": "DiscoverNodes",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcDiscoverNodesResponse"
             }
@@ -199,7 +199,7 @@
         "operationId": "ExecuteSwap",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcSwapSuccess"
             }
@@ -226,7 +226,7 @@
         "operationId": "GetInfo",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcGetInfoResponse"
             }
@@ -243,7 +243,7 @@
         "operationId": "GetNodeInfo",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcGetNodeInfoResponse"
             }
@@ -269,7 +269,7 @@
         "operationId": "ListOrders",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcListOrdersResponse"
             }
@@ -297,7 +297,7 @@
             "in": "query",
             "required": false,
             "type": "integer",
-            "format": "int32"
+            "format": "int64"
           }
         ],
         "tags": [
@@ -311,7 +311,7 @@
         "operationId": "ListPairs",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcListPairsResponse"
             }
@@ -328,7 +328,7 @@
         "operationId": "ListPeers",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcListPeersResponse"
             }
@@ -345,7 +345,7 @@
         "operationId": "PlaceOrder",
         "responses": {
           "200": {
-            "description": "(streaming responses)",
+            "description": "A successful response.(streaming responses)",
             "schema": {
               "$ref": "#/definitions/xudrpcPlaceOrderEvent"
             }
@@ -372,7 +372,7 @@
         "operationId": "PlaceOrderSync",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcPlaceOrderResponse"
             }
@@ -399,7 +399,7 @@
         "operationId": "RemoveCurrency",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcRemoveCurrencyResponse"
             }
@@ -426,7 +426,7 @@
         "operationId": "RemoveOrder",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcRemoveOrderResponse"
             }
@@ -453,7 +453,7 @@
         "operationId": "RemovePair",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcRemovePairResponse"
             }
@@ -480,7 +480,7 @@
         "operationId": "Shutdown",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcShutdownResponse"
             }
@@ -507,7 +507,7 @@
         "operationId": "SubscribeOrders",
         "responses": {
           "200": {
-            "description": "(streaming responses)",
+            "description": "A successful response.(streaming responses)",
             "schema": {
               "$ref": "#/definitions/xudrpcOrderUpdate"
             }
@@ -534,7 +534,7 @@
         "operationId": "SubscribeSwapFailures",
         "responses": {
           "200": {
-            "description": "(streaming responses)",
+            "description": "A successful response.(streaming responses)",
             "schema": {
               "$ref": "#/definitions/xudrpcSwapFailure"
             }
@@ -561,7 +561,7 @@
         "operationId": "SubscribeSwaps",
         "responses": {
           "200": {
-            "description": "(streaming responses)",
+            "description": "A successful response.(streaming responses)",
             "schema": {
               "$ref": "#/definitions/xudrpcSwapSuccess"
             }
@@ -614,7 +614,7 @@
         "operationId": "Unban",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/xudrpcUnbanResponse"
             }
@@ -724,13 +724,13 @@
       "properties": {
         "balance": {
           "type": "string",
-          "format": "int64",
-          "description": "Sum of channels balances denominated in satoshis or equivalent."
+          "format": "uint64",
+          "description": "Sum of channel balances denominated in satoshis."
         },
         "pending_open_balance": {
           "type": "string",
-          "format": "int64",
-          "description": "Sum of channels pending balances denominated in satoshis or equivalent."
+          "format": "uint64",
+          "description": "Sum of pending channel balances denominated in satoshis."
         }
       }
     },
@@ -783,7 +783,7 @@
       "properties": {
         "num_nodes": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         }
       }
     },
@@ -805,7 +805,7 @@
         "quantity": {
           "type": "string",
           "format": "uint64",
-          "description": "The quantity to swap. The whole order will be swapped if unspecified."
+          "description": "The quantity to swap denominated in satoshis. The whole order will be swapped if unspecified."
         }
       }
     },
@@ -829,12 +829,12 @@
         },
         "num_peers": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of currently connected peers."
         },
         "num_pairs": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of supported trading pairs."
         },
         "orders": {
@@ -931,17 +931,17 @@
       "properties": {
         "active": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of active/online channels for this lnd instance that can be used for swaps."
         },
         "inactive": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of inactive/offline channels for this lnd instance."
         },
         "pending": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of channels that are pending on-chain confirmation before they can be used."
         }
       }
@@ -963,7 +963,7 @@
         },
         "blockheight": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "uris": {
           "type": "array",
@@ -1010,7 +1010,7 @@
         },
         "created_at": {
           "type": "string",
-          "format": "int64",
+          "format": "uint64",
           "description": "The epoch time when this order was created."
         },
         "side": {
@@ -1025,7 +1025,7 @@
         "hold": {
           "type": "string",
           "format": "uint64",
-          "description": "The quantity on hold pending swap exectuion."
+          "description": "The quantity on hold pending swap execution."
         }
       }
     },
@@ -1035,7 +1035,7 @@
         "quantity": {
           "type": "string",
           "format": "uint64",
-          "description": "The quantity of the order being removed."
+          "description": "The quantity removed from the order."
         },
         "pair_id": {
           "type": "string",
@@ -1101,12 +1101,12 @@
       "properties": {
         "peer": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of orders belonging to remote xud nodes."
         },
         "own": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The number of orders belonging to our local xud node."
         }
       }
@@ -1147,7 +1147,7 @@
         },
         "seconds_connected": {
           "type": "integer",
-          "format": "int32",
+          "format": "int64",
           "description": "The time in seconds that we have been connected to this peer."
         },
         "raiden_address": {
@@ -1188,7 +1188,7 @@
         "quantity": {
           "type": "string",
           "format": "uint64",
-          "description": "The quantity of the order in satoshis."
+          "description": "The quantity of the order denominated in satoshis."
         },
         "pair_id": {
           "type": "string",
@@ -1200,7 +1200,7 @@
         },
         "side": {
           "$ref": "#/definitions/xudrpcOrderSide",
-          "description": "Whether the order is a Buy or Sell."
+          "description": "Whether the order is a buy or sell."
         }
       }
     },
@@ -1245,7 +1245,7 @@
         },
         "channels": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "version": {
           "type": "string"
@@ -1274,7 +1274,7 @@
         "quantity": {
           "type": "string",
           "format": "uint64",
-          "description": "The quantity to remove from the order. If zero or unspecified then entire order is removed."
+          "description": "The quantity to remove from the order denominated in satoshis.\nIf zero or unspecified then the entire order is removed."
         }
       }
     },
@@ -1354,17 +1354,17 @@
         },
         "r_hash": {
           "type": "string",
-          "description": "The hex-encoded payment hash for the swaps."
+          "description": "The hex-encoded payment hash for the swap."
         },
         "amount_received": {
           "type": "string",
-          "format": "int64",
-          "description": "The amount of the smallest base unit of the currency (like satoshis or wei) received."
+          "format": "uint64",
+          "description": "The amount received denominated in satoshis."
         },
         "amount_sent": {
           "type": "string",
-          "format": "int64",
-          "description": "The amount of the smallest base unit of the currency (like satoshis or wei) sent."
+          "format": "uint64",
+          "description": "The amount sent denominated in satoshis."
         },
         "peer_pub_key": {
           "type": "string",

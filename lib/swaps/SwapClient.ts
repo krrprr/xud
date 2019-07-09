@@ -44,8 +44,10 @@ abstract class SwapClient extends EventEmitter {
 
   /**
    * Returns the total balance available across all channels.
+   * @param currency the currency whose balance to query for, otherwise all/any
+   * currencies supported by this client are included in the balance.
    */
-  public abstract channelBalance(): Promise<ChannelBalance>;
+  public abstract channelBalance(currency?: string): Promise<ChannelBalance>;
 
   protected setStatus = async (status: ClientStatus): Promise<void> => {
     this.logger.info(`${this.constructor.name} status: ${ClientStatus[status]}`);
@@ -113,9 +115,9 @@ abstract class SwapClient extends EventEmitter {
    * @param destination target node for the route
    * @returns routes
    */
-  public abstract async getRoutes(amount: number, destination: string): Promise<Route[]>;
+  public abstract async getRoutes(amount: number, destination: string, finalCltvDelta?: number): Promise<Route[]>;
 
-  public abstract async addInvoice(rHash: string, amount: number): Promise<void>;
+  public abstract async addInvoice(rHash: string, amount: number, cltvExpiry: number): Promise<void>;
 
   public abstract async settleInvoice(rHash: string, rPreimage: string): Promise<void>;
 

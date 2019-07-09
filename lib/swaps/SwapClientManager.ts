@@ -1,29 +1,29 @@
 import Config from '../Config';
 import SwapClient from './SwapClient';
 import LndClient from '../lndclient/LndClient';
-import { LndLogger, LndInfo } from '../lndclient/types';
+import { LndInfo } from '../lndclient/types';
 import RaidenClient from '../raidenclient/RaidenClient';
-import Logger, { Loggers } from '../Logger';
+import { Loggers } from '../Logger';
 import { errors } from './errors';
 import { Currency } from '../orderbook/types';
 import { Models } from '../db/DB';
 import { SwapClientType } from '../constants/enums';
 import { EventEmitter } from 'events';
 
-function isRaidenClient(swapClient: SwapClient): swapClient is RaidenClient {
+export function isRaidenClient(swapClient: SwapClient): swapClient is RaidenClient {
   return (swapClient.type === SwapClientType.Raiden);
 }
 
-function isLndClient(swapClient: SwapClient): swapClient is LndClient {
+export function isLndClient(swapClient: SwapClient): swapClient is LndClient {
   return (swapClient.type === SwapClientType.Lnd);
 }
 
 interface SwapClientManager {
-  on(event: 'lndUpdate', listener: (currency: string, newPubKey: string) => void): this;
-  on(event: 'raidenUpdate', listener: (newAddress: string) => void): this;
+  on(event: 'lndUpdate', listener: (currency: string, pubKey: string, chain?: string) => void): this;
+  on(event: 'raidenUpdate', listener: (tokenAddresses: Map<string, string>, address?: string) => void): this;
   on(event: 'htlcAccepted', listener: (swapClient: SwapClient, rHash: string, amount: number, currency: string) => void): this;
-  emit(event: 'lndUpdate', currency: string, newPubKey: string): boolean;
-  emit(event: 'raidenUpdate', newAddress: string): boolean;
+  emit(event: 'lndUpdate', currency: string, pubKey: string, chain?: string): boolean;
+  emit(event: 'raidenUpdate', tokenAddresses: Map<string, string>, address?: string): boolean;
   emit(event: 'htlcAccepted', swapClient: SwapClient, rHash: string, amount: number, currency: string): boolean;
 }
 
@@ -42,35 +42,20 @@ class SwapClientManager extends EventEmitter {
   }
 
   /**
-   * Wraps each lnd logger call with currency.
-   * @returns A wrapped lnd logger object.
-   */
-  private static wrapLndLogger = (logger: Logger, currency: string): LndLogger => {
-    return {
-      error: (msg: string) => logger.error(`${currency}: ${msg}`),
-      warn: (msg: string) => logger.warn(`${currency}: ${msg}`),
-      info: (msg: string) => logger.info(`${currency}: ${msg}`),
-      verbose: (msg: string) => logger.verbose(`${currency}: ${msg}`),
-      debug: (msg: string) => logger.debug(`${currency}: ${msg}`),
-      trace: (msg: string) => logger.trace(`${currency}: ${msg}`),
-    };
-  }
-
-  /**
    * Starts all swap clients, binds event listeners
    * and waits for the swap clients to initialize.
    * @returns A promise that resolves upon successful initialization, rejects otherwise.
    */
   public init = async (models: Models): Promise<void> => {
     const initPromises = [];
-    // setup LND clients and initialize
+    // setup configured LND clients and initialize them
     for (const currency in this.config.lnd) {
       const lndConfig = this.config.lnd[currency]!;
       if (!lndConfig.disable) {
         const lndClient = new LndClient(
           lndConfig,
           currency,
-          (SwapClientManager.wrapLndLogger(this.loggers.lnd, currency) as Logger),
+          this.loggers.lnd.createSubLogger(currency),
         );
         this.swapClients.set(currency, lndClient);
         initPromises.push(lndClient.init());
@@ -178,17 +163,19 @@ class SwapClientManager extends EventEmitter {
     if (currency.swapClient === SwapClientType.Raiden && currency.tokenAddress) {
       this.swapClients.set(currency.id, this.raidenClient);
       this.raidenClient.tokenAddresses.set(currency.id, currency.tokenAddress);
+      this.emit('raidenUpdate', this.raidenClient.tokenAddresses, this.raidenClient.address);
     } else if (currency.swapClient === SwapClientType.Lnd) {
       // in case of lnd we check if the configuration includes swap client
       // for the specified currency
-      let hasCurrency = false;
+      let isCurrencyConfigured = false;
       for (const lndCurrency in this.config.lnd) {
         if (lndCurrency === currency.id) {
-          hasCurrency = true;
+          isCurrencyConfigured = true;
+          break;
         }
       }
       // adding a new lnd client at runtime is currently not supported
-      if (!hasCurrency) {
+      if (!isCurrencyConfigured) {
         throw errors.SWAP_CLIENT_NOT_CONFIGURED(currency.id);
       }
     }
@@ -208,17 +195,17 @@ class SwapClientManager extends EventEmitter {
   }
 
   /**
-   * Gets all lnd clients' pubKeys.
-   * @returns An object containing lnd public keys.
+   * Gets a map of all lnd clients.
+   * @returns A map of currencies to lnd clients.
    */
-  public getLndPubKeysMap = () => {
-    const lndPubKeys = new Map<string, string>();
-    for (const [currency, swapClient] of this.swapClients.entries()) {
-      if (isLndClient(swapClient) && swapClient.pubKey) {
-        lndPubKeys.set(currency, swapClient.pubKey);
+  public getLndClientsMap = () => {
+    const lndClients: Map<string, LndClient> = new Map();
+    this.swapClients.forEach((swapClient, currency) => {
+      if (isLndClient(swapClient)) {
+        lndClients.set(currency, swapClient);
       }
-    }
-    return lndPubKeys;
+    });
+    return lndClients;
   }
 
   /**
@@ -270,7 +257,7 @@ class SwapClientManager extends EventEmitter {
       if (isLndClient(swapClient)) {
         swapClient.on('connectionVerified', (newPubKey) => {
           if (newPubKey) {
-            this.emit('lndUpdate', currency, newPubKey);
+            this.emit('lndUpdate', currency, newPubKey, swapClient.chain);
           }
         });
         // lnd clients emit htlcAccepted evented we must handle
@@ -285,7 +272,7 @@ class SwapClientManager extends EventEmitter {
     if (!this.raidenClient.isDisabled()) {
       this.raidenClient.on('connectionVerified', (newAddress) => {
         if (newAddress) {
-          this.emit('raidenUpdate', newAddress);
+          this.emit('raidenUpdate', this.raidenClient.tokenAddresses, newAddress);
         }
       });
     }
