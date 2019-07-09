@@ -52,9 +52,9 @@ class OrderbookRepository {
 
   public getTrades = (limit?: number): Bluebird<db.TradeInstance[]> => {
     if (limit) {
-      return this.models.Trade.findAll({ limit, order: [['time', 'DESC']] });
+      return this.models.Trade.findAll({ limit, order: [['createdAt', 'DESC']] });
     } else {
-      return this.models.Trade.findAll({ order: [['time', 'DESC']] });
+      return this.models.Trade.findAll({ order: [['createdAt', 'DESC']] });
     }
   }
 }

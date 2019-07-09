@@ -511,7 +511,7 @@ class GrpcService {
       const trades = await this.service.listTrades(call.request.toObject());
       const response = new xudrpc.ListTradesResponse();
       const tradesList: xudrpc.Trade[] = [];
-      trades.forEach(async (trade: TradeInstance) => {
+      await Promise.all(trades.map(async (trade: TradeInstance) => {
         const grpcTrade = new xudrpc.Trade();
         const makerOrder = await trade.getMakerOrder();
         const takerOrder = await trade.getTakerOrder();
@@ -521,7 +521,8 @@ class GrpcService {
         grpcTrade.setTakerOrder(takerOrder ? getGrpcOrderFromOrderInstance(takerOrder) : undefined);
         grpcTrade.setPairId(makerOrder!.pairId);
         tradesList.push(grpcTrade);
-      });
+      }));
+
       response.setTradesList(tradesList);
       callback(null, response);
     } catch (err) {
