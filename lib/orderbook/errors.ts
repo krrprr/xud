@@ -67,7 +67,7 @@ const errors = {
     code: errorCodes.INSUFFICIENT_OUTBOUND_BALANCE,
   }),
   EXCEEDING_LIMIT: (currency: string, amount: number, limit: number) => ({
-    message: `outbound amount: ${amount} is exceeding limit of: ${limit} set for ${currency}`,
+    message: `outbound amount ${amount} is exceeding limit of ${limit} set for ${currency}`,
     code: errorCodes.EXCEEDING_LIMIT,
   }),
 };

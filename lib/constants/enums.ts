@@ -138,10 +138,3 @@ export enum DisconnectionReason {
   AuthFailureInvalidSignature = 12,
   WireProtocolErr = 13,
 }
-
-export enum Limits {
-  Btc = 4294967,
-  Ltc = 257698020,
-  Weth = 1,
-  Dai = 500,
-}

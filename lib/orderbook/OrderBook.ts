@@ -11,7 +11,8 @@ import Logger from '../Logger';
 import { ms, derivePairId, setTimeoutPromise } from '../utils/utils';
 import { Models } from '../db/DB';
 import Swaps from '../swaps/Swaps';
-import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType, Limits } from '../constants/enums';
+import Limits from '../constants/limits';
+import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType } from '../constants/enums';
 import { CurrencyInstance, PairInstance, CurrencyFactory } from '../db/types';
 import { Pair, OrderIdentifier, OwnOrder, OrderPortion, OwnLimitOrder, PeerOrder, Order, PlaceOrderEvent,
   PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder } from './types';
@@ -369,7 +370,7 @@ class OrderBook extends EventEmitter {
       }
 
       // Check if order abides to limits
-      const limit = this.getLimit(outboundCurrency);
+      const limit = Limits[outboundCurrency];
       if (limit && outboundAmount > limit) {
         throw errors.EXCEEDING_LIMIT(outboundCurrency, outboundAmount, limit);
       }
@@ -864,24 +865,6 @@ class OrderBook extends EventEmitter {
     }
   }
 
-  /**
-   * Returns maximum transfer amount for a swap operation for the given outbound currency.
-   * @param outboundCurrency the outbound currency during swap
-   */
-  private getLimit = (outboundCurrency: string): any => {
-    switch (outboundCurrency) {
-      case 'BTC':
-        return Limits.Btc;
-      case 'WETH':
-        return Limits.Weth;
-      case 'LTC':
-        return Limits.Ltc;
-      case 'DAI':
-        return Limits.Dai;
-    }
-
-    return undefined;
-  }
 }
 
 export default OrderBook;

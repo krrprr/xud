@@ -133,6 +133,7 @@ class GrpcService {
       case p2pErrorCodes.ATTEMPTED_CONNECTION_TO_SELF:
       case p2pErrorCodes.UNEXPECTED_NODE_PUB_KEY:
       case orderErrorCodes.QUANTITY_DOES_NOT_MATCH:
+      case orderErrorCodes.EXCEEDING_LIMIT:
         code = status.INVALID_ARGUMENT;
         break;
       case orderErrorCodes.PAIR_DOES_NOT_EXIST:
