@@ -12,7 +12,7 @@ import { SwapDealInstance } from '../db/types';
 import { SwapDeal, SwapSuccess, SanitySwap, ResolveRequest } from './types';
 import { generatePreimageAndHash, setTimeoutPromise } from '../utils/utils';
 import { PacketType } from '../p2p/packets';
-import SwapClientManager from './SwapClientManager';
+import SwapClientManager, { isRaidenClient } from './SwapClientManager';
 import { errors } from './errors';
 
 export type OrderToAccept = Pick<SwapDeal, 'quantity' | 'price' | 'localId' | 'isBuy'> & {
@@ -36,7 +36,7 @@ class Swaps extends EventEmitter {
   private usedHashes = new Set<string>();
   private repository: SwapRepository;
   /** Number of smallest units per currency. */
-  // TODO: Populate the mapping from the database (Currency.decimalPlaces).
+  // TODO: Use UnitConverter class instead
   private static readonly UNITS_PER_CURRENCY: { [key: string]: number } = {
     BTC: 1,
     LTC: 1,
@@ -122,9 +122,14 @@ class Swaps extends EventEmitter {
 
   public init = async () => {
     // update pool with lnd pubkeys and raiden address
-    this.swapClientManager.getLndClientsMap().forEach((lndClient) => {
-      if (lndClient.pubKey && lndClient.chain) {
-        this.pool.updateLndState(lndClient.currency, lndClient.pubKey, lndClient.chain);
+    this.swapClientManager.getLndClientsMap().forEach(({ pubKey, chain, currency, uris }) => {
+      if (pubKey && chain) {
+        this.pool.updateLndState({
+          currency,
+          pubKey,
+          chain,
+          uris,
+        });
       }
     });
     if (this.swapClientManager.raidenClient.address) {
@@ -260,7 +265,7 @@ class Swaps extends EventEmitter {
 
     let routes;
     try {
-      routes = await swapClient.getRoutes(makerUnits, destination);
+      routes = await swapClient.getRoutes(makerUnits, destination, makerCurrency);
     } catch (err) {
       throw SwapFailureReason.UnexpectedClientError;
     }
@@ -444,6 +449,29 @@ class Swaps extends EventEmitter {
     const { makerCurrency, makerAmount, makerUnits, takerCurrency, takerAmount, takerUnits } =
       Swaps.calculateMakerTakerAmounts(quantity, price, isBuy, requestBody.pairId);
 
+    const makerSwapClient = this.swapClientManager.get(makerCurrency)!;
+    if (!makerSwapClient) {
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.SwapClientNotSetup,
+        errorMessage: 'Unsupported maker currency',
+        reqId: requestPacket.header.id,
+      });
+      return false;
+    }
+
+    if (isRaidenClient(makerSwapClient)) {
+      await this.sendErrorToPeer({
+        peer,
+        rHash,
+        failureReason: SwapFailureReason.InvalidSwapRequest,
+        errorMessage: 'Raiden based tokens can not be first leg',
+        reqId: requestPacket.header.id,
+      });
+      return false;
+    }
+
     const takerSwapClient = this.swapClientManager.get(takerCurrency);
     if (!takerSwapClient) {
       await this.sendErrorToPeer({
@@ -456,11 +484,10 @@ class Swaps extends EventEmitter {
       return false;
     }
 
-    const takerPubKey = peer.getIdentifier(takerSwapClient.type, takerCurrency)!;
+    const takerIdentifier = peer.getIdentifier(takerSwapClient.type, takerCurrency)!;
 
     const deal: SwapDeal = {
       ...requestBody,
-      takerPubKey,
       price,
       isBuy,
       quantity,
@@ -470,7 +497,8 @@ class Swaps extends EventEmitter {
       takerCurrency,
       makerUnits,
       takerUnits,
-      destination: takerPubKey,
+      takerPubKey: takerIdentifier,
+      destination: takerIdentifier,
       peerPubKey: peer.nodePubKey!,
       localId: orderToAccept.localId,
       phase: SwapPhase.SwapCreated,
@@ -498,7 +526,7 @@ class Swaps extends EventEmitter {
     }
 
     try {
-      deal.makerToTakerRoutes = await takerSwapClient.getRoutes(takerUnits, takerPubKey, deal.takerCltvDelta);
+      deal.makerToTakerRoutes = await takerSwapClient.getRoutes(takerUnits, takerIdentifier, deal.takerCurrency, deal.takerCltvDelta);
     } catch (err) {
       this.failDeal(deal, SwapFailureReason.UnexpectedClientError, err.message);
       await this.sendErrorToPeer({
@@ -571,7 +599,6 @@ class Swaps extends EventEmitter {
       return false;
     }
 
-    const makerSwapClient = this.swapClientManager.get(makerCurrency)!;
     try {
       await makerSwapClient.addInvoice(deal.rHash, deal.makerUnits, deal.makerCltvDelta);
     } catch (err) {
@@ -694,12 +721,16 @@ class Swaps extends EventEmitter {
     let expectedAmount: number;
     let source: string;
     let destination: string;
-
+    // TODO: check cltv value
     switch (deal.role) {
       case SwapRole.Maker:
         expectedAmount = deal.makerUnits;
         source = 'Taker';
         destination = 'Maker';
+        if (deal.makerCltvDelta! > 50 * 2) {
+          this.failDeal(deal, SwapFailureReason.InvalidResolveRequest, 'Wrong CLTV received on first leg');
+          return false;
+        }
         break;
       case SwapRole.Taker:
         expectedAmount = deal.takerUnits;
