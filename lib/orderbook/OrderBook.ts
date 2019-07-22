@@ -14,7 +14,7 @@ import Swaps from '../swaps/Swaps';
 import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType } from '../constants/enums';
 import { CurrencyInstance, PairInstance, CurrencyFactory } from '../db/types';
 import { Pair, OrderIdentifier, OwnOrder, OrderPortion, OwnLimitOrder, PeerOrder, Order, PlaceOrderEvent,
-  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder } from './types';
+  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder, OrderBookThresholds } from './types';
 import { SwapRequestPacket, SwapFailedPacket } from '../p2p/packets';
 import { SwapSuccess, SwapDeal, SwapFailure } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
@@ -71,6 +71,7 @@ class OrderBook extends EventEmitter {
   /** A map of supported trading pair tickers and pair database instances. */
   private pairInstances = new Map<string, PairInstance>();
   private repository: OrderBookRepository;
+  private thresholds: OrderBookThresholds;
   private logger: Logger;
   private nosanityswaps: boolean;
   private nobalancechecks: boolean;
@@ -91,10 +92,11 @@ class OrderBook extends EventEmitter {
     return this.currencyInstances.keys();
   }
 
-  constructor({ logger, models, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false }:
+  constructor({ logger, models, thresholds, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false }:
   {
     logger: Logger,
     models: Models,
+    thresholds: OrderBookThresholds,
     pool: Pool,
     swaps: Swaps,
     nosanityswaps: boolean,
@@ -109,6 +111,7 @@ class OrderBook extends EventEmitter {
     this.nomatching = nomatching;
     this.nosanityswaps = nosanityswaps;
     this.nobalancechecks = nobalancechecks;
+    this.thresholds = thresholds;
 
     this.repository = new OrderBookRepository(models);
 
@@ -121,8 +124,12 @@ class OrderBook extends EventEmitter {
     return outgoingOrder ;
   }
 
+  private checkThresholdCompliance = (order: OwnOrder | IncomingOrder) => {
+    const { minQuantity } = this.thresholds;
+    return order.quantity >= minQuantity;
+  }
   /**
-   * Checks that a currency advertised by a peer are known to us, have a swap client identifier,
+   * Checks that a currency advertised by a peer is known to us, has a swap client identifier,
    * and that their token identifier matches ours.
    */
   private isPeerCurrencySupported = (peer: Peer, currency: string) => {
@@ -149,17 +156,7 @@ class OrderBook extends EventEmitter {
     this.pool.on('peer.close', this.removePeerOrders);
     this.pool.on('peer.pairDropped', this.removePeerPair);
     this.pool.on('peer.verifyPairs', this.verifyPeerPairs);
-    this.pool.on('peer.nodeStateUpdate', (peer) => {
-      const advertisedCurrencies = peer.getAdvertisedCurrencies();
-
-      advertisedCurrencies.forEach((advertisedCurrency) => {
-        if (!this.isPeerCurrencySupported(peer, advertisedCurrency)) {
-          peer.disableCurrency(advertisedCurrency);
-        } else {
-          peer.enableCurrency(advertisedCurrency);
-        }
-      });
-    });
+    this.pool.on('peer.nodeStateUpdate', this.checkPeerCurrencies);
   }
 
   private bindSwaps = () => {
@@ -176,7 +173,7 @@ class OrderBook extends EventEmitter {
       }
     });
     this.swaps.on('swap.failed', (deal) => {
-      if (deal.role === SwapRole.Maker && (deal.phase === SwapPhase.SwapAgreed || deal.phase === SwapPhase.SendingAmount)) {
+      if (deal.role === SwapRole.Maker && (deal.phase === SwapPhase.SwapAgreed || deal.phase === SwapPhase.SendingPayment)) {
         // if our order is the maker and the swap failed after it was agreed to but before it was executed
         // we must release the hold on the order that we set when we agreed to the deal
         this.removeOrderHold(deal.orderId, deal.pairId, deal.quantity!);
@@ -355,6 +352,13 @@ class OrderBook extends EventEmitter {
     onUpdate?: (e: PlaceOrderEvent) => void,
     maxTime?: number,
   ): Promise<PlaceOrderResult> => {
+    // Check if order complies to thresholds
+    if (this.thresholds.minQuantity > 0) {
+      if (!this.checkThresholdCompliance(order)) {
+        throw errors.MIN_QUANTITY_VIOLATED(order.id);
+      }
+    }
+
     // this method can be called recursively on swap failures retries.
     // if max time exceeded, don't try to match
     if (maxTime && Date.now() > maxTime) {
@@ -377,8 +381,9 @@ class OrderBook extends EventEmitter {
       if (!swapClient) {
         throw swapsErrors.SWAP_CLIENT_NOT_FOUND(outboundCurrency);
       }
-      if (outboundAmount > swapClient.maximumOutboundCapacity) {
-        throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, swapClient.maximumOutboundCapacity);
+      const maximumOutboundAmount = swapClient.maximumOutboundCapacity(outboundCurrency);
+      if (outboundAmount > maximumOutboundAmount) {
+        throw errors.INSUFFICIENT_OUTBOUND_BALANCE(outboundCurrency, outboundAmount, maximumOutboundAmount);
       }
     }
 
@@ -555,6 +560,14 @@ class OrderBook extends EventEmitter {
    * @returns `false` if it's a duplicated order or with an invalid pair id, otherwise true
    */
   private addPeerOrder = (order: IncomingOrder): boolean => {
+    if (this.thresholds.minQuantity > 0) {
+      if (!this.checkThresholdCompliance(order)) {
+        this.removePeerOrder(order.id, order.pairId, order.peerPubKey, order.quantity);
+        this.logger.debug('incoming peer order does not comply with configured threshold');
+        return false;
+      }
+    }
+
     const tp = this.tradingPairs.get(order.pairId);
     if (!tp) {
       // TODO: penalize peer for sending an order for an unsupported pair
@@ -702,6 +715,18 @@ class OrderBook extends EventEmitter {
     const orders = tp.removePeerOrders(peerPubKey);
     orders.forEach((order) => {
       this.emit('peerOrder.invalidation', order);
+    });
+  }
+
+  private checkPeerCurrencies = (peer: Peer) => {
+    const advertisedCurrencies = peer.getAdvertisedCurrencies();
+
+    advertisedCurrencies.forEach((advertisedCurrency) => {
+      if (!this.isPeerCurrencySupported(peer, advertisedCurrency)) {
+        peer.disableCurrency(advertisedCurrency);
+      } else {
+        peer.enableCurrency(advertisedCurrency);
+      }
     });
   }
 

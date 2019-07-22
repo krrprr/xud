@@ -10,6 +10,7 @@ import SwapClientManager from '../../lib/swaps/SwapClientManager';
 import Network from '../../lib/p2p/Network';
 import { XuNetwork, SwapClientType } from '../../lib/constants/enums';
 import NodeKey from '../../lib/nodekey/NodeKey';
+import { UnitConverter } from '../../lib/utils/UnitConverter';
 
 jest.mock('../../lib/db/DB', () => {
   return jest.fn().mockImplementation(() => {
@@ -70,7 +71,6 @@ jest.mock('../../lib/p2p/Pool', () => {
     };
   });
 });
-jest.mock('../../lib/Config');
 jest.mock('../../lib/swaps/Swaps');
 jest.mock('../../lib/swaps/SwapClientManager');
 jest.mock('../../lib/Logger');
@@ -99,6 +99,7 @@ describe('OrderBook', () => {
   let peer: Peer;
   let swapClientManager: SwapClientManager;
   let network: Network;
+  let unitConverter: UnitConverter;
 
   beforeEach(async () => {
     config = new Config();
@@ -117,12 +118,15 @@ describe('OrderBook', () => {
       version: '1.0.0',
       nodeKey: new mockedNodeKey(),
     });
-    swapClientManager = new SwapClientManager(config, loggers);
+    unitConverter = new UnitConverter();
+    unitConverter.init();
+    swapClientManager = new SwapClientManager(config, loggers, unitConverter);
     swaps = new Swaps(loggers.swaps, db.models, pool, swapClientManager);
     swaps.swapClientManager = swapClientManager;
     orderbook = new Orderbook({
       pool,
       swaps,
+      thresholds: config.orderthresholds,
       logger: loggers.orderbook,
       models: db.models,
       nomatching: config.nomatching,
@@ -184,12 +188,14 @@ describe('OrderBook', () => {
       return {
         inboundCurrency: 'BTC',
         inboundAmount: 50000000000,
+        inboundUnits: 50000000000,
         outboundCurrency: 'LTC',
         outboundAmount: quantity,
+        outboundUnits: quantity,
       };
     };
     swaps.swapClientManager.get = jest.fn().mockReturnValue({
-      maximumOutboundCapacity: 1,
+      maximumOutboundCapacity: () => 1,
     });
     await expect(orderbook.placeLimitOrder(order))
       .rejects.toMatchSnapshot();
