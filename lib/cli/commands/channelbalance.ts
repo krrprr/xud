@@ -1,8 +1,9 @@
 import { callback, loadXudClient } from '../command';
 import { Arguments } from 'yargs';
+import { ChannelBalanceRequest, ChannelBalanceResponse } from '../../proto/xudrpc_pb';
+import { satsToCoinsStr } from '../utils';
 import Table, { HorizontalTable } from 'cli-table3';
 import colors from 'colors/safe';
-import { ChannelBalanceRequest, ChannelBalanceResponse } from '../../proto/xudrpc_pb';
 
 const HEADERS = [
   colors.blue('Ticker'),
@@ -14,7 +15,7 @@ const formatChannels = (channels: ChannelBalanceResponse.AsObject) => {
   const formatted: any[] = [];
   channels.balancesMap.forEach((channel) => {
     const element = [];
-    element.push(channel[0], channel[1].balance, channel[1].pendingOpenBalance);
+    element.push(channel[0], `${satsToCoinsStr(channel[1].balance)}`, `${satsToCoinsStr(channel[1].pendingOpenBalance)}`);
     formatted.push(element);
   });
   return formatted;
