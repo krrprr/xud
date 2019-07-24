@@ -407,8 +407,8 @@ message ListOrdersResponse {
 
 message ListCurrenciesRequest {}
 message ListCurrenciesResponse {
-  // A list of ticker symbols of the supported currencies.
-  repeated string currencies = 1 [json_name = "currencies"];
+  // The list of available currencies in orderbook.
+  repeated Currency currencies = 1 [json_name = "currencies"];
 }
 
 message ListPairsRequest {}
@@ -467,6 +467,15 @@ message Order {
   uint64 hold = 10 [json_name = "hold"];
 }
 
+message Currency {
+  // Ticker symbol of this currency (e.g. BTC)
+  string ticker_symbol = 1 [json_name = "ticker_symbol"];
+  // The places to the right of the decimal point of the smallest subunit (e.g. 8, 18)
+  uint64 digits = 2 [json_name = "digits"];
+  // Global identifier of this currency
+  string global_identifier = 3 [json_name = "global_identifier"];
+}
+
 message OrderUpdate {
   oneof order_update {
     // An order that was added to the order book.
@@ -508,7 +517,7 @@ message Peer {
   string address = 1 [json_name = "address"];
   // The node pub key to uniquely identify this peer.
   string node_pub_key = 2 [json_name = "node_pub_key"];
-  // A map of ticker symbols to lnd pub keys for this peer 
+  // A map of ticker symbols to lnd pub keys for this peer
   map<string, string> lnd_pub_keys = 3 [json_name = "lnd_pub_keys"];
   // Indicates whether this peer was connected inbound.
   bool inbound = 4 [json_name = "inbound"];

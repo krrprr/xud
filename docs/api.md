@@ -19,6 +19,7 @@
     - [ConnectResponse](#xudrpc.ConnectResponse)
     - [CreateNodeRequest](#xudrpc.CreateNodeRequest)
     - [CreateNodeResponse](#xudrpc.CreateNodeResponse)
+    - [Currency](#xudrpc.Currency)
     - [DiscoverNodesRequest](#xudrpc.DiscoverNodesRequest)
     - [DiscoverNodesResponse](#xudrpc.DiscoverNodesResponse)
     - [ExecuteSwapRequest](#xudrpc.ExecuteSwapRequest)
@@ -300,6 +301,23 @@
 
 
 
+<a name="xudrpc.Currency"></a>
+
+### Currency
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ticker_symbol | [string](#string) |  | Ticker symbol of this currency (e.g. BTC) |
+| digits | [uint64](#uint64) |  | The places to the right of the decimal point of the smallest subunit (e.g. 8, 18) |
+| global_identifier | [string](#string) |  | Global identifier of this currency |
+
+
+
+
+
+
 <a name="xudrpc.DiscoverNodesRequest"></a>
 
 ### DiscoverNodesRequest
@@ -445,7 +463,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| currencies | [string](#string) | repeated | A list of ticker symbols of the supported currencies. |
+| currencies | [Currency](#xudrpc.Currency) | repeated | The list of available currencies in orderbook. |
 
 
 

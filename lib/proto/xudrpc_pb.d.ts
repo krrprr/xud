@@ -665,9 +665,9 @@ export namespace ListCurrenciesRequest {
 
 export class ListCurrenciesResponse extends jspb.Message { 
     clearCurrenciesList(): void;
-    getCurrenciesList(): Array<string>;
-    setCurrenciesList(value: Array<string>): void;
-    addCurrencies(value: string, index?: number): string;
+    getCurrenciesList(): Array<Currency>;
+    setCurrenciesList(value: Array<Currency>): void;
+    addCurrencies(value?: Currency, index?: number): Currency;
 
 
     serializeBinary(): Uint8Array;
@@ -682,7 +682,7 @@ export class ListCurrenciesResponse extends jspb.Message {
 
 export namespace ListCurrenciesResponse {
     export type AsObject = {
-        currenciesList: Array<string>,
+        currenciesList: Array<Currency.AsObject>,
     }
 }
 
@@ -920,6 +920,35 @@ export namespace Order {
 
     }
 
+}
+
+export class Currency extends jspb.Message { 
+    getTickerSymbol(): string;
+    setTickerSymbol(value: string): void;
+
+    getDigits(): number;
+    setDigits(value: number): void;
+
+    getGlobalIdentifier(): string;
+    setGlobalIdentifier(value: string): void;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Currency.AsObject;
+    static toObject(includeInstance: boolean, msg: Currency): Currency.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: Currency, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): Currency;
+    static deserializeBinaryFromReader(message: Currency, reader: jspb.BinaryReader): Currency;
+}
+
+export namespace Currency {
+    export type AsObject = {
+        tickerSymbol: string,
+        digits: number,
+        globalIdentifier: string,
+    }
 }
 
 export class OrderUpdate extends jspb.Message { 

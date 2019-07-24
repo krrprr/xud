@@ -471,9 +471,16 @@ class GrpcService {
    */
   public listCurrencies: grpc.handleUnaryCall<xudrpc.ListCurrenciesRequest, xudrpc.ListCurrenciesResponse> = (_, callback) => {
     try {
-      const listCurrenciesResponse = this.service.listCurrencies();
+      const currencies = this.service.listCurrencies();
       const response = new xudrpc.ListCurrenciesResponse();
-      response.setCurrenciesList(listCurrenciesResponse);
+
+      currencies.forEach((currency) => {
+        const resultCurrency = new xudrpc.Currency();
+        resultCurrency.setDigits(currency.decimalPlaces);
+        resultCurrency.setTickerSymbol(currency.id);
+        resultCurrency.setGlobalIdentifier('TODO');
+        response.getCurrenciesList().push(resultCurrency);
+      });
 
       callback(null, response);
     } catch (err) {

@@ -330,7 +330,7 @@ class Service {
    * @returns A list of supported currency ticker symbols
    */
   public listCurrencies = () => {
-    return Array.from(this.orderBook.currencies);
+    return this.orderBook.currencies;
   }
 
   /**
