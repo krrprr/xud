@@ -474,11 +474,11 @@ class GrpcService {
       const currencies = this.service.listCurrencies();
       const response = new xudrpc.ListCurrenciesResponse();
 
-      currencies.forEach((currency) => {
+      currencies.currencies.forEach((currency) => {
         const resultCurrency = new xudrpc.Currency();
         resultCurrency.setDigits(currency.decimalPlaces);
         resultCurrency.setTickerSymbol(currency.id);
-        resultCurrency.setGlobalIdentifier('TODO');
+        resultCurrency.setGlobalIdentifier(currencies.tokenIdentifiers[currency.id] || 'unknown');
         response.getCurrenciesList().push(resultCurrency);
       });
 

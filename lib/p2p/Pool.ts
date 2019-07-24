@@ -141,6 +141,10 @@ class Pool extends EventEmitter {
     return this.nodeState.addresses;
   }
 
+  public getTokenIdentifiers() {
+    return this.nodeState.tokenIdentifiers;
+  }
+
   public getTokenIdentifier(currency: string) {
     return this.nodeState.tokenIdentifiers[currency];
   }

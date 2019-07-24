@@ -89,7 +89,7 @@ class OrderBook extends EventEmitter {
   }
 
   public get currencies() {
-    return this.currencyInstances;
+    return { currencies: this.currencyInstances, tokenIdentifiers: this.pool.getTokenIdentifiers() };
   }
 
   constructor({ logger, models, thresholds, pool, swaps, nosanityswaps, nobalancechecks, nomatching = false }:
