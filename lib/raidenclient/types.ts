@@ -66,11 +66,12 @@ export type RaidenResolveRequest = {
   amount: number;
   /** The maximum number of blocks allowed between the setting of a hashlock and the revealing of the related secret. */
   reveal_timeout: number;
+  /** The lock expiration for the incoming payment. */
+  expiration: number;
   // 'settle_timeout': raiden.config['settle_timeout'],
   // unused fields on the raiden request listed below, taken from raiden codebase
   // 'payment_identifier': secret_request_event.payment_identifier,
   // 'payment_sender': to_hex(secret_request_event.recipient),
-  // 'expiration': secret_request_event.expiration,
   // 'payment_recipient': to_hex(raiden.address),
 };
 

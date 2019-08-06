@@ -10,7 +10,7 @@ class HttpService {
       rHash: resolveRequest.secrethash.slice(2),
       amount: resolveRequest.amount,
       tokenAddress: resolveRequest.token,
-      cltvDelta: resolveRequest.reveal_timeout,
+      cltvDelta: resolveRequest.expiration,
     });
     return { secret };
   }
