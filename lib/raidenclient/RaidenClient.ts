@@ -42,7 +42,7 @@ async function parseResponseBody<T>(res: http.IncomingMessage): Promise<T> {
  */
 class RaidenClient extends SwapClient {
   public readonly type = SwapClientType.Raiden;
-  public readonly cltvDelta: number;
+  public readonly lockBuffer: number;
   public address?: string;
   /** A map of currency symbols to token addresses. */
   public tokenAddresses = new Map<string, string>();
@@ -57,14 +57,13 @@ class RaidenClient extends SwapClient {
    * Creates a raiden client.
    */
   constructor(
-    { config, logger, unitConverter, directChannelChecks = false }:
-    { config: RaidenClientConfig, logger: Logger, unitConverter: UnitConverter, directChannelChecks: boolean },
+    { config, logger, unitConverter, directChannelChecks = false, lockduration }:
+    { config: RaidenClientConfig, logger: Logger, unitConverter: UnitConverter, directChannelChecks: boolean, lockduration: number },
   ) {
     super(logger);
-    const { disable, host, port, cltvdelta } = config;
+    const { disable, host, port } = config;
 
-    assert(cltvdelta > 0, 'cltv delta must be greater than 0');
-    this.cltvDelta = cltvdelta;
+    this.lockBuffer = Math.round(lockduration * 60 / this.minutesPerBlock);
     this.port = port;
     this.host = host;
     this.disable = disable;

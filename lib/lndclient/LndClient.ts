@@ -36,7 +36,9 @@ const MAXFEE = 0.03;
 /** A class representing a client to interact with lnd. */
 class LndClient extends SwapClient {
   public readonly type = SwapClientType.Lnd;
-  public readonly cltvDelta: number;
+  public readonly lockBuffer: number;
+  public config: LndClientConfig;
+  public currency: string;
   private lightning?: LightningClient | LightningMethodIndex;
   private walletUnlocker?: WalletUnlockerClient | InvoicesMethodIndex;
   private invoices?: InvoicesClient | InvoicesMethodIndex;
@@ -60,12 +62,15 @@ class LndClient extends SwapClient {
 
   /**
    * Creates an lnd client.
-   * @param config the lnd configuration
    */
-  constructor(private config: LndClientConfig, public currency: string, logger: Logger) {
+  constructor(
+    { config, logger, currency, lockduration }:
+    { config: LndClientConfig, logger: Logger, currency: string, lockduration: number },
+  ) {
     super(logger);
-    assert(config.cltvdelta > 0, 'cltv delta must be greater than 0');
-    this.cltvDelta = config.cltvdelta;
+    this.config = config;
+    this.currency = currency;
+    this.lockBuffer = Math.round(lockduration * 60 / LndClient.MINUTES_PER_BLOCK_BY_CURRENCY[currency]);
   }
 
   public get minutesPerBlock() {
@@ -74,7 +79,7 @@ class LndClient extends SwapClient {
 
   /** Initializes the client for calls to lnd and verifies that we can connect to it.  */
   public init = async () => {
-    assert(this.cltvDelta > 0, `lnd-${this.currency}: cltvdelta must be a positive number`);
+    assert(this.lockBuffer > 0, `lnd-${this.currency}: cltvdelta must be a positive number`);
 
     const { disable, certpath, macaroonpath, nomacaroons, host, port } = this.config;
     if (disable) {
@@ -313,7 +318,7 @@ class LndClient extends SwapClient {
       // In case of sanity swaps we don't know the
       // takerCltvDelta or the makerCltvDelta. Using our
       // client's default.
-      finalCltvDelta: this.cltvDelta,
+      finalCltvDelta: this.lockBuffer,
     });
     const preimage = await this.executeSendRequest(request);
     return preimage;
@@ -337,14 +342,10 @@ class LndClient extends SwapClient {
     } else {
       // we are the maker paying the taker
       assert(deal.takerPubKey, 'swap deal as maker must have a takerPubKey');
-      assert(deal.takerCltvDelta, 'swap deal as maker must have a takerCltvDelta');
       request = this.buildSendRequest({
         rHash: deal.rHash,
         destination: deal.takerPubKey!,
         amount: deal.takerAmount,
-        // Using the agreed upon takerCltvDelta. Taker won't accept
-        // our payment if we provide a smaller value.
-        finalCltvDelta: deal.takerCltvDelta,
         // Enforcing the maximum duration/length of the payment by
         // specifying the cltvLimit.
         cltvLimit: deal.makerCltvDelta,
@@ -367,13 +368,15 @@ class LndClient extends SwapClient {
    */
   private buildSendRequest = (
     { rHash, destination, amount, finalCltvDelta, cltvLimit }:
-    { rHash: string, destination: string, amount: number, finalCltvDelta: number, cltvLimit?: number },
+    { rHash: string, destination: string, amount: number, finalCltvDelta?: number, cltvLimit?: number },
   ): lndrpc.SendRequest => {
     const request = new lndrpc.SendRequest();
     request.setPaymentHashString(rHash);
     request.setDestString(destination);
     request.setAmt(amount);
-    request.setFinalCltvDelta(finalCltvDelta);
+    if (finalCltvDelta) {
+      request.setFinalCltvDelta(finalCltvDelta);
+    }
     const fee = new lndrpc.FeeLimit();
     fee.setFixed(Math.floor(MAXFEE * request.getAmt()));
     request.setFeeLimit(fee);
@@ -518,7 +521,7 @@ class LndClient extends SwapClient {
     return this.unaryCall<lndrpc.ListChannelsRequest, lndrpc.ListChannelsResponse>('listChannels', new lndrpc.ListChannelsRequest());
   }
 
-  public getRoutes =  async (amount: number, destination: string, _currency: string, finalCltvDelta = this.cltvDelta): Promise<lndrpc.Route[]> => {
+  public getRoutes =  async (amount: number, destination: string, _currency: string, finalCltvDelta = this.lockBuffer): Promise<lndrpc.Route[]> => {
     const request = new lndrpc.QueryRoutesRequest();
     request.setAmt(amount);
     request.setFinalCltvDelta(finalCltvDelta);
@@ -580,11 +583,13 @@ class LndClient extends SwapClient {
     return unlockWalletResponse.toObject();
   }
 
-  public addInvoice = async (rHash: string, amount: number, cltvExpiry: number) => {
+  public addInvoice = async (rHash: string, amount: number, cltvExpiry?: number) => {
     const addHoldInvoiceRequest = new lndinvoices.AddHoldInvoiceRequest();
     addHoldInvoiceRequest.setHash(hexToUint8Array(rHash));
     addHoldInvoiceRequest.setValue(amount);
-    addHoldInvoiceRequest.setCltvExpiry(cltvExpiry);
+    if (cltvExpiry) {
+      addHoldInvoiceRequest.setCltvExpiry(cltvExpiry);
+    }
     await this.addHoldInvoice(addHoldInvoiceRequest);
     this.logger.debug(`added invoice of ${amount} for ${rHash} with cltvExpiry ${cltvExpiry}`);
     this.subscribeSingleInvoice(rHash);

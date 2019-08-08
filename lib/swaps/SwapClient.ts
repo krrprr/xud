@@ -33,7 +33,12 @@ interface SwapClient {
  * A base class to represent an external swap client such as lnd or Raiden.
  */
 abstract class SwapClient extends EventEmitter {
-  public abstract readonly cltvDelta: number;
+  /**
+   * The number of blocks to use for determining the minimum delay for an incoming payment in excess
+   * of the total time delay of the contingent outgoing payment. This buffer ensures that the lock
+   * for incoming payments does not expire before the contingent outgoing payment lock.
+   */
+  public abstract readonly lockBuffer: number;
   public abstract readonly type: SwapClientType;
   protected status: ClientStatus = ClientStatus.NotInitialized;
   protected reconnectionTimer?: NodeJS.Timer;
@@ -118,7 +123,7 @@ abstract class SwapClient extends EventEmitter {
    */
   public abstract async getRoutes(amount: number, destination: string, currency: string, finalCltvDelta?: number): Promise<Route[]>;
 
-  public abstract async addInvoice(rHash: string, amount: number, cltvExpiry: number): Promise<void>;
+  public abstract async addInvoice(rHash: string, amount: number, cltvExpiry?: number): Promise<void>;
 
   public abstract async settleInvoice(rHash: string, rPreimage: string): Promise<void>;
 

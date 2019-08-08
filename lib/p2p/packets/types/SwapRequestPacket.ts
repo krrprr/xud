@@ -34,7 +34,6 @@ class SwapRequestPacket extends Packet<SwapRequestPacketBody> {
       && obj.pairId
       && obj.orderId
       && obj.rHash
-      && obj.takerCltvDelta
     );
   }
 
