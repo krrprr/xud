@@ -20,6 +20,7 @@ import { SwapFailedPacket, SwapRequestPacket } from '../p2p/packets';
 import { SwapDeal, SwapFailure, SwapSuccess } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
 // @ts-ignore
+import Bluebird from 'bluebird';
 
 interface OrderBook {
   /** Adds a listener to be called when a remote order was added. */
