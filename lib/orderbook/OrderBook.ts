@@ -8,19 +8,18 @@ import { errors as swapsErrors } from '../swaps/errors';
 import Pool from '../p2p/Pool';
 import Peer from '../p2p/Peer';
 import Logger from '../Logger';
-import { ms, derivePairId, setTimeoutPromise } from '../utils/utils';
+import { derivePairId, ms, setTimeoutPromise } from '../utils/utils';
 import { Models } from '../db/DB';
 import Swaps from '../swaps/Swaps';
 import Limits from '../constants/limits';
-import { SwapRole, SwapFailureReason, SwapPhase, SwapClientType } from '../constants/enums';
-import { CurrencyInstance, PairInstance, CurrencyFactory } from '../db/types';
-import { Pair, OrderIdentifier, OwnOrder, OrderPortion, OwnLimitOrder, PeerOrder, Order, PlaceOrderEvent,
-  PlaceOrderEventType, PlaceOrderResult, OutgoingOrder, OwnMarketOrder, isOwnOrder, IncomingOrder, OrderBookThresholds } from './types';
-import { SwapRequestPacket, SwapFailedPacket } from '../p2p/packets';
-import { SwapSuccess, SwapDeal, SwapFailure } from '../swaps/types';
+import { SwapClientType, SwapFailureReason, SwapPhase, SwapRole, XuNetwork } from '../constants/enums';
+import { CurrencyFactory, CurrencyInstance, PairInstance } from '../db/types';
+import { IncomingOrder, isOwnOrder, Order, OrderBookThresholds, OrderIdentifier, OrderPortion, OutgoingOrder, OwnLimitOrder, OwnMarketOrder,
+  OwnOrder, Pair, PeerOrder, PlaceOrderEvent, PlaceOrderEventType, PlaceOrderResult } from './types';
+import { SwapFailedPacket, SwapRequestPacket } from '../p2p/packets';
+import { SwapDeal, SwapFailure, SwapSuccess } from '../swaps/types';
 // We add the Bluebird import to ts-ignore because it's actually being used.
 // @ts-ignore
-import Bluebird from 'bluebird';
 
 interface OrderBook {
   /** Adds a listener to be called when a remote order was added. */
@@ -375,7 +374,7 @@ class OrderBook extends EventEmitter {
       };
     }
 
-    if (!this.nobalancechecks) {
+    if (!this.nobalancechecks && this.pool.getNetwork() === XuNetwork.MainNet) {
       // check if sufficient outbound channel capacity exists
       const { outboundCurrency, outboundAmount } = Swaps.calculateInboundOutboundAmounts(order.quantity, order.price, order.isBuy, order.pairId);
       const swapClient = this.swaps.swapClientManager.get(outboundCurrency);

@@ -1,8 +1,8 @@
 const limits: { [currency: string]: number } = {
-  BTC : 4294967,
-  LTC : 257698020,
-  WETH : 1,
-  DAI : 500,
+  BTC : 42949,
+  LTC : 50000,
+  WETH : 0.02,
+  DAI : 5,
 };
 
 export default limits;
